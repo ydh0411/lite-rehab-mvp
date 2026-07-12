@@ -9,7 +9,6 @@
 #define LED_GPIO GPIO_NUM_2
 #define BUZZER_GPIO GPIO_NUM_18
 
-typedef struct { motion_quality_t quality; bool new_rep; } feedback_event_t;
 static QueueHandle_t feedback_queue;
 static bool is_connected;
 
@@ -29,10 +28,9 @@ static void feedback_task(void *arg)
     feedback_event_t event;
     while (true) {
         if (xQueueReceive(feedback_queue, &event, pdMS_TO_TICKS(500)) == pdTRUE) {
-            if (event.quality == MOTION_QUALITY_TOO_FAST ||
-                event.quality == MOTION_QUALITY_INSUFFICIENT_RANGE) {
+            if (event == FEEDBACK_EVENT_WARNING) {
                 tone(280, 180); vTaskDelay(pdMS_TO_TICKS(80)); tone(220, 220);
-            } else if (event.new_rep) {
+            } else if (event == FEEDBACK_EVENT_SUCCESS) {
                 tone(880, 100);
             }
         } else if (!is_connected) {
@@ -78,9 +76,8 @@ void receiver_outputs_set_connected(bool connected)
     gpio_set_level(LED_GPIO, connected ? 1 : 0);
 }
 
-void receiver_outputs_feedback(motion_quality_t quality, bool new_rep)
+void receiver_outputs_feedback(feedback_event_t event)
 {
-    if (feedback_queue == NULL || (!new_rep && quality == MOTION_QUALITY_NONE)) return;
-    const feedback_event_t event = {.quality = quality, .new_rep = new_rep};
+    if (feedback_queue == NULL || event == FEEDBACK_EVENT_NONE) return;
     (void)xQueueSend(feedback_queue, &event, 0);
 }

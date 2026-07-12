@@ -2,13 +2,14 @@
 
 #include "ble_client.h"
 #include "esp_log.h"
+#include "feedback_logic.h"
 #include "receiver_outputs.h"
 #include "serial_telemetry.h"
 
 static const char *TAG = "receiver";
 static uint16_t previous_sequence;
-static uint16_t previous_reps;
 static bool have_sequence;
+static feedback_logic_t feedback_logic;
 
 static void connection_changed(bool connected)
 {
@@ -26,15 +27,14 @@ static void packet_received(const motion_packet_t *packet)
     }
     previous_sequence = packet->sequence;
     have_sequence = true;
-    const bool new_rep = packet->rep_count != previous_reps;
-    previous_reps = packet->rep_count;
-    receiver_outputs_feedback((motion_quality_t)packet->quality, new_rep);
+    receiver_outputs_feedback(feedback_logic_update(&feedback_logic, packet));
     serial_telemetry_packet(packet);
 }
 
 void app_main(void)
 {
     ESP_ERROR_CHECK(receiver_outputs_init());
+    feedback_logic_init(&feedback_logic);
     serial_telemetry_header();
     ESP_LOGI(TAG, "starting BLE receiver");
     ESP_ERROR_CHECK(ble_client_init(packet_received, connection_changed));
