@@ -202,7 +202,6 @@ def main() -> None:
     if port is None:
         raise SystemExit("No ESP32-S3 serial port found")
     reader = SerialReader(port)
-    reader.start()
     cnn = OptionalCNN(args.model)
     multimodal = (MultimodalPredictor(load_multimodal_checkpoint(args.fusion_model))
                   if args.fusion_model is not None else None)
@@ -260,6 +259,7 @@ def main() -> None:
         if rows:
             log_file.flush()
 
+    reader.start()
     try:
         while True:
             while True:

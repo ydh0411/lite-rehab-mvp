@@ -75,7 +75,9 @@ pitch = 0.98 × (pitch + gy × dt) + 0.02 × atan2(-ax, √(ay² + az²))
 
 ### 2. Adaptive Threshold (Khalilipour 2025)
 
-Signal RMS is tracked with exponential smoothing (α=0.95). Entry and exit thresholds adapt dynamically:
+Resting-signal RMS is tracked with exponential smoothing (α=0.95). It is
+updated only below the fixed entry threshold, so an active repetition cannot
+raise its own reversal threshold:
 
 ```
 rms = √(0.95 × rms² + 0.05 × signal²)
@@ -237,7 +239,63 @@ pip install -r requirements.txt
 python run_dashboard.py --port auto --camera 0 --output sessions/demo.csv
 ```
 
-Controls: `q`/`Esc` quit, `b` reset torso baseline, `r` reset elbow angle history.
+Controls: `q`/`Esc` quit, `b` reset torso baseline, `r` reset the current
+repetition range.
+
+## Upgraded RGB-IMU workflow
+
+The dashboard runs without a trained model and supports either affected side:
+
+```bash
+python run_dashboard.py --port auto --camera 0 --side left \
+  --output sessions/demo.csv
+```
+
+It now uses MediaPipe video mode, repetition-scoped range, timestamped RGB/IMU
+association, and a lossless synchronized CSV schema. To collect one labelled
+recording, keep one exercise/quality pair per file:
+
+```bash
+python run_dashboard.py --port auto --side right --subject S01 \
+  --label-exercise elbow_flexion --label-quality ok \
+  --output multimodal_data/S01_elbow_ok.csv
+```
+
+Train only after collecting multiple participants, with one entire participant
+held out:
+
+```bash
+python train_multimodal.py --data multimodal_data --holdout-subject S03 \
+  --output models/multimodal_cnn_bigru.pt
+
+python run_dashboard.py --port auto --side right \
+  --fusion-model models/multimodal_cnn_bigru.pt
+```
+
+Low-confidence or missing model output automatically falls back to the
+deterministic wearable rules. No trained multimodal checkpoint is included,
+because the existing demo CSV files are not subject-labelled training data.
+
+## Build and flash helpers
+
+Run the complete software and firmware gate:
+
+```bash
+./scripts/test_all.sh
+```
+
+When the boards are available, identify each port with `ls /dev/cu.*` and flash
+one board at a time:
+
+```bash
+./scripts/flash_wearable.sh /dev/cu.usbserial-WEARABLE
+./scripts/flash_receiver.sh /dev/cu.usbmodem-RECEIVER
+```
+
+These commands generate and write the normal ESP-IDF bootloader, partition
+table, and application image. Physical BLE, OLED, LED, buzzer, and camera
+integration still requires the actual boards and cannot be certified by a
+host-only build.
 
 If MediaPipe or camera is unavailable, the dashboard falls back to IMU-only mode.
 

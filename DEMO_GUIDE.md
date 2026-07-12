@@ -156,17 +156,23 @@ python -c "import mediapipe as mp; print('MediaPipe OK')"
 
 ```bash
 cd lite_rehab_mvp/python
-python run_dashboard.py --port auto --camera 0 --output sessions/demo.csv
+python run_dashboard.py --port auto --camera 0 --side left \
+  --output sessions/demo.csv
 ```
 
 - `--port auto`：自动查找串口
 - `--camera 0`：使用默认摄像头
+- `--side left/right`：选择佩戴传感器和训练的患侧
 - `--output`：CSV 输出路径
 
 ### 4.2 加载深度学习模型（可选）
 
 ```bash
 python run_dashboard.py --port auto --model models/imu_cnn_bigru.pt
+
+# 真正的视觉—IMU双分支模型（采集并训练后）
+python run_dashboard.py --port auto --side left \
+  --fusion-model models/multimodal_cnn_bigru.pt
 ```
 
 ### 4.3 操作按键
@@ -175,7 +181,7 @@ python run_dashboard.py --port auto --model models/imu_cnn_bigru.pt
 |------|------|
 | `q` / `Esc` | 退出 |
 | `b` | 重新捕获躯干基准姿态 |
-| `r` | 重置肘部角度历史 |
+| `r` | 重置当前 repetition 的活动范围 |
 
 ---
 
@@ -224,7 +230,7 @@ python run_dashboard.py --port auto --model models/imu_cnn_bigru.pt
 head -5 sessions/demo.csv
 ```
 
-包含字段：时间戳、加速度计三轴(g)、陀螺仪三轴(dps)、状态、次数、质量、肘角度、躯干代偿标记。
+包含字段：设备与接收时间戳、加速度计三轴、陀螺仪三轴、状态、次数、质量、左右侧视觉角度/速度/可见度、视觉有效标记、模型输出、subject 和人工标签。每条已接收 IMU 数据都会记录；找不到相邻视频帧时视觉字段保留为显式缺失标记。
 
 ---
 
@@ -239,6 +245,7 @@ head -5 sessions/demo.csv
 ### 6.2 自适应阈值（Khalilipour 2025）
 
 - 跟踪信号 RMS，动态调整进入/退出阈值
+- 仅在静止噪声范围内更新，动作本身不会抬高反向阈值
 - 范围：25-150 dps
 - 适应不同速度的运动，避免固定阈值误触发或漏触发
 
@@ -274,6 +281,25 @@ python collect_data.py --port auto --subject S01 --label elbow_flexion --seconds
 python train_1d_cnn.py --data data --holdout-subject S03 \
   --arch cnn_bigru --epochs 50 --output models/imu_cnn_bigru.pt
 ```
+
+### 采集和训练视觉—IMU融合模型
+
+每个文件只使用一个人工 exercise/quality 标签组合：
+
+```bash
+python run_dashboard.py --port auto --side left --subject S01 \
+  --label-exercise elbow_flexion --label-quality ok \
+  --output multimodal_data/S01_elbow_ok.csv
+
+python run_dashboard.py --port auto --side left --subject S01 \
+  --label-exercise elbow_flexion --label-quality too_fast \
+  --output multimodal_data/S01_elbow_fast.csv
+
+python train_multimodal.py --data multimodal_data --holdout-subject S03 \
+  --epochs 30 --output models/multimodal_cnn_bigru.pt
+```
+
+没有 checkpoint 或模型置信度不足时，Dashboard 自动回退到可直接运行的固件规则，不会阻止演示。
 
 ---
 

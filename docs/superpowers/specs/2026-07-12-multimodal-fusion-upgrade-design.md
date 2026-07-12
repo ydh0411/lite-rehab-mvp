@@ -11,7 +11,7 @@ The target user is a patient performing therapist-selected shoulder, elbow, or f
 The supported demonstration exercises are:
 
 1. Elbow flexion and extension.
-2. Shoulder abduction.
+2. Shoulder abduction after collecting data and training the optional model.
 3. Forearm pronation and supination.
 
 The supported feedback classes are `ok`, `too_fast`, `insufficient_range`, and `trunk_compensation`. The affected side is selectable as `left` or `right`.
@@ -61,7 +61,7 @@ Visual range is accumulated inside a repetition window. It resets when a new rep
 
 ## Time synchronization and recording
 
-IMU timestamps originate on the wearable. Camera timestamps use the desktop monotonic clock. The desktop establishes a session offset when the first IMU sample arrives, maps IMU time into the desktop clock, and associates each camera frame with the nearest IMU sample within a bounded tolerance.
+IMU device timestamps originate on the wearable and remain in the CSV. The serial reader also stamps every received packet with the desktop monotonic clock; camera frames use the same desktop clock. The synchronizer associates each received IMU sample with the nearest camera feature record within a bounded tolerance, avoiding assumptions about independent device-clock drift.
 
 All drained IMU samples are recorded, not only the most recent sample displayed by the UI. Synchronized training rows contain raw IMU channels, derived pose features, visibility, exercise state, repetition identifier, quality, label, and subject identifier. Missing visual samples remain explicit through a mask.
 
