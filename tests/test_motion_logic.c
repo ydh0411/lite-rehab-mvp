@@ -13,15 +13,18 @@ static motion_result_t feed_axis_cycle(motion_logic_t *logic,
     motion_result_t result = {0};
     for (int i = 0; i < samples_each_way; ++i) {
         *time_ms += 20;
-        result = motion_logic_update(logic, gx, gy, 0.0f, *time_ms);
+        result = motion_logic_update(logic, gx, gy, 0.0f,
+                                     0.0f, 0.0f, 1.0f, *time_ms);
     }
     for (int i = 0; i < samples_each_way; ++i) {
         *time_ms += 20;
-        result = motion_logic_update(logic, -gx, -gy, 0.0f, *time_ms);
+        result = motion_logic_update(logic, -gx, -gy, 0.0f,
+                                     0.0f, 0.0f, 1.0f, *time_ms);
     }
     for (int i = 0; i < 5; ++i) {
         *time_ms += 20;
-        result = motion_logic_update(logic, 0.0f, 0.0f, 0.0f, *time_ms);
+        result = motion_logic_update(logic, 0.0f, 0.0f, 0.0f,
+                                     0.0f, 0.0f, 1.0f, *time_ms);
     }
     return result;
 }
@@ -45,7 +48,8 @@ int main(void)
 
     for (int i = 0; i < 20; ++i) {
         now += 20;
-        motion_result_t idle = motion_logic_update(&logic, 2.0f, -1.0f, 0.5f, now);
+        motion_result_t idle = motion_logic_update(
+            &logic, 2.0f, -1.0f, 0.5f, 0.0f, 0.0f, 1.0f, now);
         assert(idle.state == MOTION_STATE_IDLE);
         assert(idle.rep_count == 0);
     }
@@ -71,6 +75,19 @@ int main(void)
     motion_result_t short_range = feed_axis_cycle(&logic, 40.0f, 0.0f, 5, &now);
     assert(short_range.rep_count == 0);
     assert(short_range.quality == MOTION_QUALITY_INSUFFICIENT_RANGE);
+
+    motion_logic_init(&logic, &config);
+    now = 0;
+    for (int i = 0; i < 20; ++i) {
+        now += 20;
+        (void)motion_logic_update(&logic, 2.0f, 1.0f, 0.0f,
+                                  0.0f, 0.0f, 1.0f, now);
+    }
+    const float idle_threshold = logic.adaptive_enter;
+    now += 20;
+    (void)motion_logic_update(&logic, 300.0f, 0.0f, 0.0f,
+                              1.0f, 0.0f, 0.0f, now);
+    assert(logic.adaptive_enter == idle_threshold);
 
     puts("test_motion_logic: PASS");
     return 0;

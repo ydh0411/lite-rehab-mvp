@@ -39,7 +39,7 @@ void motion_logic_init(motion_logic_t *logic, const motion_config_t *config)
 }
 
 static void update_complementary_filter(motion_logic_t *logic,
-                                         float gx, float gy, float gz,
+                                         float gx, float gy,
                                          float ax, float ay, float az,
                                          float dt_s)
 {
@@ -147,16 +147,17 @@ motion_result_t motion_logic_update(motion_logic_t *logic,
 
     const float gx = logic->result.filtered_gyro[0];
     const float gy = logic->result.filtered_gyro[1];
-    const float gz = logic->result.filtered_gyro[2];
-
     if (dt_ms > 0) {
-        update_complementary_filter(logic, gx, gy, gz, ax_g, ay_g, az_g,
+        update_complementary_filter(logic, gx, gy, ax_g, ay_g, az_g,
                                      dt_ms / 1000.0f);
     }
     logic->result.roll_deg = logic->roll_deg;
     logic->result.pitch_deg = logic->pitch_deg;
 
-    update_adaptive_thresholds(logic, fmaxf(fabsf(gx), fabsf(gy)));
+    const float signal_mag = fmaxf(fabsf(gx), fabsf(gy));
+    if (logic->phase == 0 && signal_mag < logic->config.enter_threshold_dps) {
+        update_adaptive_thresholds(logic, signal_mag);
+    }
 
     const motion_state_t classified = classify_axis(logic, gx, gy, ax_g, ay_g);
 
