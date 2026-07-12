@@ -108,6 +108,12 @@ The completion gate is:
 4. Dashboard starts in a headless smoke test without a camera or serial device.
 5. Documentation and command examples match the implemented interfaces.
 
+## Review discipline
+
+Every production-code change follows a red-green-refactor cycle. Existing failures are investigated with reproducible commands and recent-change tracing before a fix is proposed. After each independently testable task, the actual Git diff is reviewed for requirement alignment, interface mismatches, persistent-state bugs, error handling, and untested branches.
+
+Before publication, the complete branch is reviewed against this design rather than only against whether the tests happen to pass. The final review must confirm BLE packet compatibility, one-shot physical feedback, timestamped multimodal records, left/right symmetry, camera-loss fallback, checkpoint validation, subject-disjoint training support, and accurate documentation. No unresolved critical or important review finding may be pushed as completed work.
+
 ## Non-goals
 
 - Full-body 3D pose reconstruction.
