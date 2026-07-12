@@ -1,6 +1,6 @@
 # LiteRehab-Fusion MVP
 
-Dual-board ESP32 BLE wearable for home upper-limb rehabilitation recording, with real-time IMU motion classification, MediaPipe vision fusion, and an optional CNN-BiGRU model.
+Dual-board ESP32 BLE wearable for home upper-limb rehabilitation recording, with real-time IMU motion classification, MediaPipe vision fusion, and an optional multimodal CNN-BiGRU model.
 
 ## System Architecture
 
@@ -13,34 +13,44 @@ Dual-board ESP32 BLE wearable for home upper-limb rehabilitation recording, with
 │  └───────────┬───────────────┘  │   accel×3 + gyro×3   │  └─────────┬──────────┘   │
 │              │                  │   state + quality     │            │              │
 │  ┌───────────▼───────────────┐  │   + rep_count         │  ┌─────────▼──────────┐   │
-│  │ Complementary filter      │  │                       │  │ LED (GPIO2)        │   │
-│  │ α=0.98 gyro + accel grav  │  │                       │  │ Buzzer (GPIO18)    │   │
-│  │ → roll / pitch            │  │                       │  │ LEDC PWM feedback  │   │
+│  │ Complementary filter      │  │                       │  │ Feedback state     │   │
+│  │ α=0.98 gyro + accel grav  │  │                       │  │ machine: one-shot  │   │
+│  │ → roll / pitch            │  │                       │  │ buzzer per event   │   │
 │  └───────────┬───────────────┘  │                       │  └─────────┬──────────┘   │
 │              │                  │                       │            │              │
 │  ┌───────────▼───────────────┐  │                       │  ┌─────────▼──────────┐   │
-│  │ Adaptive threshold        │  │                       │  │ Serial telemetry   │   │
-│  │ RMS-tracking, 25-150 dps  │  │                       │  │ CSV over USB-CDC   │   │
+│  │ Adaptive threshold        │  │                       │  │ LED (GPIO2)        │   │
+│  │ RMS-tracking, 25-150 dps  │  │                       │  │ Buzzer (GPIO18)    │   │
+│  │ (rest-only update)        │  │                       │  │ LEDC PWM feedback  │   │
+│  └───────────┬───────────────┘  │                       │  └─────────┬──────────┘   │
+│              │                  │                       │            │              │
+│  ┌───────────▼───────────────┐  │                       │  ┌─────────▼──────────┐   │
+│  │ 3-phase state machine     │  │                       │  │ Serial telemetry   │   │
+│  │ idle → enter → exit → rep │  │                       │  │ CSV over USB-CDC   │   │
 │  └───────────┬───────────────┘  │                       │  └─────────┬──────────┘   │
 │              │                  │                       │            │              │
 │  ┌───────────▼───────────────┐  │                       └────────────┼──────────────┘
-│  │ 3-phase state machine     │  │                                    │
-│  │ idle → enter → exit → rep │  │                           USB Serial
-│  └───────────┬───────────────┘  │                                    │
-│              │                  │                           ┌────────▼──────────────┐
-│  ┌───────────▼───────────────┐  │                           │  Python Dashboard     │
-│  │ SSD1306 OLED 128×64      │  │                           │  ┌──────────────────┐ │
-│  │ state / reps / quality    │  │                           │  │ MediaPipe Pose   │ │
-│  │ BLE connection status     │  │                           │  │ elbow angle      │ │
-│  └───────────────────────────┘  │                           │  │ trunk detection  │ │
-└─────────────────────────────────┘                           │  ├──────────────────┤ │
+│  │ SSD1306 OLED 128×64      │  │                                    │
+│  │ state / reps / quality    │  │                           USB Serial
+│  │ BLE connection status     │  │                                    │
+│  └───────────────────────────┘  │                           ┌────────▼──────────────┐
+└─────────────────────────────────┘                           │  Python Dashboard     │
+                                                              │  ┌──────────────────┐ │
+                                                              │  │ MediaPipe Pose   │ │
+                                                              │  │ left/right side  │ │
+                                                              │  │ elbow + shoulder │ │
+                                                              │  │ trunk detection  │ │
+                                                              │  ├──────────────────┤ │
                                                               │  │ IMU gyro chart   │ │
                                                               │  │ 3-axis real-time │ │
                                                               │  ├──────────────────┤ │
-                                                              │  │ CNN-BiGRU model  │ │
-                                                              │  │ (optional)       │ │
+                                                              │  │ Multimodal model │ │
+                                                              │  │ IMU + vision CNN │ │
+                                                              │  │ confidence gate +│ │
+                                                              │  │ rule fallback    │ │
                                                               │  ├──────────────────┤ │
-                                                              │  │ Session CSV log  │ │
+                                                              │  │ Sync CSV log     │ │
+                                                              │  │ lossless IMU+RGB │ │
                                                               │  └──────────────────┘ │
                                                               └───────────────────────┘
 ```
@@ -109,21 +119,44 @@ Gyroscope dominance ratio distinguishes rotation from flexion:
 - `|gy| / |gx| ≥ 1.30` and accelerometer Y-dominant → elbow flexion
 - Otherwise → hold previous state
 
-### 5. CNN-BiGRU (Obukhov et al. 2025)
+### 5. Feedback State Machine
 
-Optional deep learning model for comparison with the rule-based classifier:
+The receiver runs a one-shot feedback state machine that tracks per-state
+transitions. A success beep only fires once per completed repetition, and
+warning events do not retrigger until the motion state changes. This prevents
+persistent BLE quality values from queuing repeated buzzer events.
+
+### 6. Multimodal CNN-BiGRU (Obukhov et al. 2025)
+
+Optional dual-branch model that fuses IMU and vision. Confidence-gated: the
+vision branch is attenuated by per-window visibility, and low-confidence
+outputs automatically fall back to the deterministic wearable rules.
 
 ```
-Input: [100 samples × 6 channels]  (2-second window at 50 Hz)
-├── Conv1d(6→64, k=3) + BN + ReLU + MaxPool(2)   → [50 × 64]
-├── Conv1d(64→128, k=3) + BN + ReLU + MaxPool(2)  → [25 × 128]
-├── Conv1d(128→256, k=3) + BN + ReLU              → [25 × 256]
-├── BiGRU(256→128×2)                               → [25 × 256]
-├── Temporal mean pool                             → [256]
-├── Dropout(0.5) + Linear(256 → num_classes)
+IMU branch:                            Pose branch:
+[100×6]                                [100×9]
+├── Conv1d(6→32,k5)+BN+ReLU+MP(2)      ├── Conv1d(9→32,k5)+BN+ReLU+MP(2)
+├── Conv1d(32→64,k3)+BN+ReLU+MP(2)     ├── Conv1d(32→64,k3)+BN+ReLU+MP(2)
+├── BiGRU(64→64×2)                     ├── BiGRU(64→64×2)
+└── mean pool → [128]                  └── mean pool × confidence → [128]
+
+Fusion: Concat[256] → Linear(256→128) + ReLU + Dropout(0.3)
+        ├── Exercise head: Linear(128 → num_exercises)
+        └── Quality head:  Linear(128 → num_qualities)
 ```
 
-Parameters: ~423K. CPU inference: 5–10 ms per window.
+Parameters: ~300K. CPU inference: 5–10 ms per window.
+
+## Decision Resolution
+
+```
+if rule quality is warning (too_fast / insufficient_range):
+    → rule safety override (always)
+elif model available and confidence ≥ threshold:
+    → multimodal model prediction
+else:
+    → deterministic rule fallback
+```
 
 ## Hardware
 
@@ -167,7 +200,8 @@ Use the native USB port (labeled **USB**), not the UART port.
 lite_rehab_mvp/
 ├── shared/                  # Cross-board C modules
 │   ├── motion_packet.h/c    #   CRC-16 BLE packet (26 bytes)
-│   └── motion_logic.h/c     #   Complementary filter + adaptive threshold + state machine
+│   ├── motion_logic.h/c     #   Complementary filter + adaptive threshold + state machine
+│   └── feedback_logic.h/c   #   One-shot buzzer state machine (per-state debounce)
 ├── wearable/                # MYOSA ESP32 firmware (NimBLE Peripheral)
 │   └── main/
 │       ├── app_main.c       #   20 ms sampling loop
@@ -180,25 +214,35 @@ lite_rehab_mvp/
 │       ├── app_main.c       #   Packet dispatch with sequence gap detection
 │       ├── ble_client.h/c   #   BLE scan → connect → service discovery → CCCD subscribe
 │       ├── serial_telemetry.h/c #  CSV output over USB-CDC
-│       └── receiver_outputs.h/c #  LED + LEDC PWM buzzer feedback
+│       └── receiver_outputs.h/c #  Feedback state machine + LED + LEDC PWM buzzer
 ├── python/
 │   ├── literehab/
 │   │   ├── telemetry.py     #   Serial line parser → TelemetrySample
 │   │   ├── fusion.py        #   IMU + vision feedback fusion (5 priority levels)
 │   │   ├── pose_math.py     #   Joint angle + trunk compensation detection
+│   │   ├── pose_features.py #   Side-aware pose extraction (left/right)
+│   │   ├── synchronization.py   #  Timestamped IMU-RGB sample pairing
+│   │   ├── multimodal.py    #   Dual-branch CNN-BiGRU + checkpoint load + predictor
+│   │   ├── dashboard_state.py   #  Decision resolution + camera health + CSV schema
 │   │   ├── cnn.py           #   1D-CNN and CNN-BiGRU model builders
 │   │   └── dataset.py       #   Sliding window (100 samples, stride 50)
-│   ├── run_dashboard.py     #   OpenCV dashboard with MediaPipe pose
-│   ├── collect_data.py      #   Labeled data recorder
-│   ├── train_1d_cnn.py      #   CNN training script (--arch cnn_bigru default)
-│   └── tests/               #   pytest: telemetry, fusion, pose_math, dataset
-├── tests/                   # Host-side C tests
+│   ├── run_dashboard.py     #   OpenCV dashboard with MediaPipe + synchronized logging
+│   ├── collect_data.py      #   Labeled IMU data recorder (rule-only)
+│   ├── train_1d_cnn.py      #   IMU-only CNN training (--arch cnn_bigru default)
+│   ├── train_multimodal.py  #   Multimodal IMU+vision training
+│   ├── requirements.txt     #   numpy, opencv, pyserial, pytest, mediapipe, torch
+│   └── tests/               #   pytest: telemetry, fusion, pose_math, pose_features,
+│                             #          synchronization, multimodal, dashboard_state
+├── tests/                   # Host-side C tests (3 executables)
 │   ├── test_motion_packet.c #   CRC integrity and tamper detection
 │   ├── test_motion_logic.c  #   Rotation/flexion/fast/short-range assertions
-│   └── run_host_tests.sh    #   Compile and run C tests
+│   ├── test_feedback_logic.c#   One-shot state transition coverage
+│   └── run_host_tests.sh    #   Compile and run all C tests
 ├── scripts/
 │   ├── build_all.sh         #   idf.py build for both boards
-│   └── test_all.sh          #   C tests + pytest + py_compile + firmware build
+│   ├── test_all.sh          #   C tests + pytest + py_compile + firmware build
+│   ├── flash_wearable.sh    #   ESP32 flash helper
+│   └── flash_receiver.sh    #   ESP32-S3 flash helper
 ├── COMPONENTS.md            #   Bilingual component list
 ├── WIRING_GUIDE.md          #   Step-by-step assembly with safety checks
 └── DEMO_GUIDE.md            #   Full demonstration walkthrough
@@ -211,15 +255,8 @@ lite_rehab_mvp/
 ```bash
 source ~/.espressif/v6.0.2/esp-idf/export.sh
 
-# Wearable (ESP32)
-cd wearable
-idf.py set-target esp32
-idf.py -p /dev/cu.usbserial-* -b 460800 flash
-
-# Receiver (ESP32-S3) — use native USB port
-cd ../receiver
-idf.py set-target esp32s3
-idf.py -p /dev/cu.usbmodem-* -b 460800 flash
+./scripts/flash_wearable.sh /dev/cu.usbserial-WEARABLE
+./scripts/flash_receiver.sh /dev/cu.usbmodem-RECEIVER
 ```
 
 For ESP32-S3 flashing issues, use manual download mode: hold BOOT, press RST, release BOOT, then flash.
@@ -236,66 +273,23 @@ pip install -r requirements.txt
 ### 3. Launch dashboard
 
 ```bash
-python run_dashboard.py --port auto --camera 0 --output sessions/demo.csv
-```
-
-Controls: `q`/`Esc` quit, `b` reset torso baseline, `r` reset the current
-repetition range.
-
-## Upgraded RGB-IMU workflow
-
-The dashboard runs without a trained model and supports either affected side:
-
-```bash
 python run_dashboard.py --port auto --camera 0 --side left \
   --output sessions/demo.csv
 ```
 
-It now uses MediaPipe video mode, repetition-scoped range, timestamped RGB/IMU
-association, and a lossless synchronized CSV schema. To collect one labelled
-recording, keep one exercise/quality pair per file:
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--port` | `auto` | Serial port or `auto` |
+| `--camera` | `0` | Camera device index |
+| `--side` | required | `left` or `right` (affected limb) |
+| `--output` | `sessions/session.csv` | CSV log path |
+| `--model` | none | IMU-only CNN-BiGRU checkpoint |
+| `--fusion-model` | none | Multimodal IMU+vision checkpoint |
+| `--subject` | `""` | Subject ID for labelled recording |
+| `--label-exercise` | `""` | Exercise label for one recording |
+| `--label-quality` | `""` | Quality label for one recording |
 
-```bash
-python run_dashboard.py --port auto --side right --subject S01 \
-  --label-exercise elbow_flexion --label-quality ok \
-  --output multimodal_data/S01_elbow_ok.csv
-```
-
-Train only after collecting multiple participants, with one entire participant
-held out:
-
-```bash
-python train_multimodal.py --data multimodal_data --holdout-subject S03 \
-  --output models/multimodal_cnn_bigru.pt
-
-python run_dashboard.py --port auto --side right \
-  --fusion-model models/multimodal_cnn_bigru.pt
-```
-
-Low-confidence or missing model output automatically falls back to the
-deterministic wearable rules. No trained multimodal checkpoint is included,
-because the existing demo CSV files are not subject-labelled training data.
-
-## Build and flash helpers
-
-Run the complete software and firmware gate:
-
-```bash
-./scripts/test_all.sh
-```
-
-When the boards are available, identify each port with `ls /dev/cu.*` and flash
-one board at a time:
-
-```bash
-./scripts/flash_wearable.sh /dev/cu.usbserial-WEARABLE
-./scripts/flash_receiver.sh /dev/cu.usbmodem-RECEIVER
-```
-
-These commands generate and write the normal ESP-IDF bootloader, partition
-table, and application image. Physical BLE, OLED, LED, buzzer, and camera
-integration still requires the actual boards and cannot be certified by a
-host-only build.
+Controls: `q`/`Esc` quit, `b` reset torso baseline, `r` reset repetition range.
 
 If MediaPipe or camera is unavailable, the dashboard falls back to IMU-only mode.
 
@@ -306,28 +300,65 @@ cd ..
 ./scripts/test_all.sh
 ```
 
+This runs: 3 C host executables + 34 Python tests + py_compile syntax check + both firmware builds.
+
 ## Data Collection & Training
 
-Collect 30-second recordings per subject per class:
+### IMU-only (rule-based labels)
 
 ```bash
 python collect_data.py --port auto --subject S01 --label idle --seconds 30
 python collect_data.py --port auto --subject S01 --label forearm_rotation --seconds 30
 python collect_data.py --port auto --subject S01 --label elbow_flexion --seconds 30
-```
 
-Repeat for at least 3 subjects. Train with one subject held out:
-
-```bash
 python train_1d_cnn.py --data data --holdout-subject S03 \
   --arch cnn_bigru --epochs 50 --output models/imu_cnn_bigru.pt
-```
 
-Run dashboard with the trained model:
-
-```bash
 python run_dashboard.py --port auto --model models/imu_cnn_bigru.pt
 ```
+
+### Multimodal (IMU + vision, side-aware)
+
+Collect labelled recordings directly from the dashboard — one exercise/quality pair per file:
+
+```bash
+python run_dashboard.py --port auto --side right --subject S01 \
+  --label-exercise elbow_flexion --label-quality ok \
+  --output multimodal_data/S01_elbow_ok.csv
+
+python run_dashboard.py --port auto --side right --subject S01 \
+  --label-exercise elbow_flexion --label-quality too_fast \
+  --output multimodal_data/S01_elbow_fast.csv
+```
+
+Train with one participant held out:
+
+```bash
+python train_multimodal.py --data multimodal_data --holdout-subject S03 \
+  --output models/multimodal_cnn_bigru.pt
+
+python run_dashboard.py --port auto --side right \
+  --fusion-model models/multimodal_cnn_bigru.pt
+```
+
+Low-confidence model output falls back to deterministic wearable rules automatically.
+
+## CSV Schema
+
+Every received IMU sample is logged. When no matching video frame is found
+within the synchronization tolerance (50 ms), vision columns are explicit
+missing markers (= 0.0, `vision_valid` = 0).
+
+| Column | Description |
+|--------|-------------|
+| `t_ms`, `received_s` | Device timestamp (ms) + host receive time (s) |
+| `ax`–`gz` | Accelerometer (g) and gyroscope (dps) |
+| `state`, `rep_count`, `quality` | Wearable classifier output |
+| `elbow_angle_deg`–`visibility` | 9 pose feature channels |
+| `vision_valid` | 1.0 when a matching frame exists |
+| `model_exercise`–`model_confidence` | Multimodal model output (empty if unused) |
+| `visual_confidence` | Per-window visibility × validity |
+| `subject`, `label_exercise`, `label_quality` | Human labels for training |
 
 ## Threshold Calibration
 
