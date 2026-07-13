@@ -14,6 +14,7 @@ import numpy as np
 import serial
 from serial.tools import list_ports
 
+from literehab.camera_source import CameraSource, parse_camera_source
 from literehab.cnn import build_model
 from literehab.dashboard_state import (
     CameraHealth,
@@ -169,10 +170,14 @@ def draw_pose(frame: np.ndarray, landmarks) -> None:
             cv2.circle(frame, (int(lm.x * w), int(lm.y * h)), 2, (0, 0, 255), -1)
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="LiteRehab live fusion dashboard")
     parser.add_argument("--port", default="auto")
     parser.add_argument("--camera", type=int, default=0)
+    parser.add_argument(
+        "--camera-source",
+        help="auto, a local UVC camera index, or an rtsp:// URL",
+    )
     parser.add_argument("--output", type=Path, default=Path("sessions/session.csv"))
     parser.add_argument("--model", type=Path)
     parser.add_argument("--fusion-model", type=Path)
@@ -188,7 +193,19 @@ def main() -> None:
         choices=["", "none", "ok", "too_fast", "insufficient_range",
                  "trunk_compensation"])
     parser.add_argument("--headless-smoke-test", action="store_true")
-    args = parser.parse_args()
+    return parser
+
+
+def resolve_camera_argument(args: argparse.Namespace) -> int | str:
+    selected = args.camera_source if args.camera_source is not None else args.camera
+    try:
+        return parse_camera_source(selected)
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
+
+
+def main() -> None:
+    args = build_parser().parse_args()
 
     if not 0.0 <= args.model_confidence <= 1.0:
         raise SystemExit("--model-confidence must be between 0 and 1")
@@ -197,6 +214,8 @@ def main() -> None:
         SampleSynchronizer()
         print("LiteRehab dashboard smoke test: PASS")
         return
+
+    camera_argument = resolve_camera_argument(args)
 
     port = choose_port(args.port)
     if port is None:
@@ -216,8 +235,8 @@ def main() -> None:
     log = csv.DictWriter(log_file, fieldnames=SESSION_FIELDS)
     log.writeheader()
 
-    capture = cv2.VideoCapture(args.camera)
-    camera_configured = capture.isOpened() and mp is not None
+    camera = CameraSource(camera_argument, cv2)
+    camera_configured = mp is not None
     camera_health = CameraHealth()
     if camera_configured and MP_LEGACY:
         pose = mp.solutions.pose.Pose(min_detection_confidence=0.5,
@@ -273,8 +292,10 @@ def main() -> None:
                 cnn_prediction = cnn.update(latest) or cnn_prediction
 
             camera_time = time.monotonic()
-            ok, frame = capture.read() if capture.isOpened() else (False, None)
-            camera_healthy = (camera_configured and camera_health.record(ok))
+            ok, frame = camera.read()
+            camera_healthy = (
+                camera_configured and camera.healthy and camera_health.record(ok)
+            )
             if not ok:
                 frame = np.zeros((600, 800, 3), dtype=np.uint8)
                 cv2.putText(frame, "Camera unavailable - IMU-only mode", (70, 300),
@@ -335,6 +356,7 @@ def main() -> None:
                 f"Side: {args.side}",
                 f"Exercise: {decision.exercise}", f"Repetitions: {reps}",
                 f"Feedback: {fusion.feedback}", f"Serial: {reader.status}",
+                f"Camera: {camera.status}",
                 f"ROM: {elbow_range:.1f} deg" if elbow_range is not None else "ROM: --",
                 (f"Fusion confidence: {decision.confidence:.2f}"
                  if multimodal_prediction is not None
@@ -358,7 +380,7 @@ def main() -> None:
     finally:
         record_ready(synchronizer.drain(time.monotonic(), force=True))
         reader.close()
-        capture.release()
+        camera.close()
         if pose is not None:
             pose.close()
         log_file.close()
