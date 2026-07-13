@@ -1,9 +1,43 @@
+from collections import deque
+
+import numpy as np
+
 from literehab.dashboard_view import (
     DashboardViewState,
     display_label,
     feedback_presentation,
+    render_dashboard,
     status_tone,
 )
+from literehab.telemetry import TelemetrySample
+
+
+def base_state(**changes):
+    values = dict(
+        exercise="elbow_flexion",
+        repetitions=4,
+        feedback="Good repetition",
+        mode="Fusion",
+        source="multimodal model",
+        side="left",
+        serial_status="connected",
+        camera_status="connected: 0",
+        rom_deg=82.5,
+        confidence_text="Fusion 0.91",
+    )
+    values.update(changes)
+    return DashboardViewState(**values)
+
+
+def sample(gx=10.0, gy=20.0, gz=30.0):
+    return TelemetrySample(
+        1,
+        (0.0, 0.0, 1.0),
+        (gx, gy, gz),
+        "idle",
+        0,
+        "none",
+    )
 
 
 def test_internal_labels_are_human_readable():
@@ -54,3 +88,25 @@ def test_view_state_accepts_missing_optional_metrics():
     )
 
     assert state.rom_deg is None
+
+
+def test_renderer_returns_fixed_nonempty_canvas():
+    frame = np.full((600, 800, 3), 80, dtype=np.uint8)
+
+    canvas = render_dashboard(
+        frame,
+        deque([sample(), sample(-10, 5, 40)]),
+        base_state(),
+    )
+
+    assert canvas.shape == (720, 1280, 3)
+    assert canvas.dtype == np.uint8
+    assert np.any(canvas[:64] != canvas[64:128].mean())
+
+
+def test_renderer_handles_empty_history_and_missing_rom():
+    frame = np.zeros((600, 800, 3), dtype=np.uint8)
+
+    canvas = render_dashboard(frame, [], base_state(rom_deg=None))
+
+    assert canvas.shape == (720, 1280, 3)
