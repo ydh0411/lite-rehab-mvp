@@ -183,7 +183,7 @@ def draw_gyro_chart(panel: np.ndarray, history) -> None:
 
 
 def _camera_panel(frame: np.ndarray, camera_status: str) -> np.ndarray:
-    if "connected" in camera_status.lower():
+    if status_tone(camera_status) == "success":
         return cv2.resize(frame, (800, 600))
 
     panel = np.full((600, 800, 3), COLORS["surface"], dtype=np.uint8)

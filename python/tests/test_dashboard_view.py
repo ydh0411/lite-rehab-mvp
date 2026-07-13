@@ -119,3 +119,15 @@ def test_renderer_handles_empty_history_and_missing_rom():
     canvas = render_dashboard(frame, [], base_state(rom_deg=None))
 
     assert canvas.shape == (720, 1280, 3)
+
+
+def test_renderer_does_not_treat_not_connected_camera_as_healthy():
+    frame = np.full((600, 800, 3), 255, dtype=np.uint8)
+
+    canvas = render_dashboard(
+        frame,
+        [],
+        base_state(camera_status="not connected"),
+    )
+
+    assert tuple(canvas[300, 400]) == COLORS["surface"]
