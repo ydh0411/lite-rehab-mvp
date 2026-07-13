@@ -13,7 +13,7 @@ This is an engineering prototype for coursework and demonstration. It is not a m
 - Uses MaixCAM 2 pose landmarks to estimate elbow range of motion and trunk compensation.
 - Falls back to IMU-only feedback if video is lost, then restores fusion automatically.
 - Records every received IMU sample with the nearest valid pose features in CSV.
-- Supports an optional IMU and pose CNN-BiGRU after labelled data has been collected.
+- Auto-loads a small CNN-BiGRU trained from a public upper-limb IMU subset; no user-recorded training session is required.
 
 ## System overview
 
@@ -165,7 +165,7 @@ The default session file is `python/sessions/maixcam2_demo.csv`.
 | `insufficient_range` | IMU rules | Integrated movement angle is too small |
 | `trunk_compensation` | Vision | Shoulder-to-hip displacement exceeds the allowed baseline change |
 
-Firmware rules remain the default decision path. The optional multimodal model uses 100-sample IMU and pose windows, but the repository does not ship a trained checkpoint. Shoulder abduction should only be presented after collecting subject-labelled data and training the model.
+Firmware rules remain the safety fallback. The dashboard auto-loads `python/models/imu_cnnbigru.pt`, trained from a small public right-wrist IMU subset using 100-sample windows. ESP32 rule gating supplies the idle state, so no user-recorded training data are required. This checkpoint is a classroom demonstration baseline, not evidence of clinical accuracy.
 
 ## Tests
 

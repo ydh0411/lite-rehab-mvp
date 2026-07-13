@@ -68,7 +68,10 @@ def choose_port(requested: str) -> str | None:
         return requested
     ports = [item.device for item in list_ports.comports()]
     for name in ports:
-        if "usbmodem" in name.lower() or "usbserial" in name.lower():
+        if "usbmodem" in name.lower():
+            return name
+    for name in ports:
+        if "usbserial" in name.lower():
             return name
     return ports[0] if ports else None
 
@@ -110,8 +113,11 @@ class OptionalCNN:
     def __init__(self, path: Path | None):
         self.enabled = False
         self.samples = deque(maxlen=100)
-        if path is None or not path.exists():
+        self.path = path
+        if path is None:
             return
+        if not path.exists():
+            raise FileNotFoundError(f"IMU CNN checkpoint not found: {path}")
         import torch
         checkpoint = torch.load(path, map_location="cpu", weights_only=True)
         self.labels = checkpoint["labels"]
@@ -124,10 +130,19 @@ class OptionalCNN:
         self.torch = torch
         self.enabled = True
 
+    def status_text(self, prediction: str | None) -> str:
+        if not self.enabled:
+            return "disabled"
+        if prediction is None:
+            return f"warming up ({len(self.samples)}/{self.samples.maxlen})"
+        return prediction
+
     def update(self, sample: TelemetrySample) -> str | None:
         self.samples.append((*sample.accel_g, *sample.gyro_dps))
         if not self.enabled or len(self.samples) < self.samples.maxlen:
             return None
+        if sample.state == "idle":
+            return "idle"
         values = (np.asarray(self.samples, dtype=np.float32) - self.mean) / self.std
         tensor = self.torch.tensor(values).T.unsqueeze(0)
         with self.torch.no_grad():
@@ -179,7 +194,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="auto, a local UVC camera index, or an rtsp:// URL",
     )
     parser.add_argument("--output", type=Path, default=Path("sessions/session.csv"))
-    parser.add_argument("--model", type=Path)
+    parser.add_argument(
+        "--model",
+        type=Path,
+        default=Path(__file__).resolve().parent / "models" / "imu_cnnbigru.pt",
+    )
     parser.add_argument("--fusion-model", type=Path)
     parser.add_argument("--model-confidence", type=float, default=0.70)
     parser.add_argument("--side", choices=["left", "right"], default="left")
@@ -209,9 +228,11 @@ def main() -> None:
 
     if not 0.0 <= args.model_confidence <= 1.0:
         raise SystemExit("--model-confidence must be between 0 and 1")
+    cnn = OptionalCNN(args.model)
     if args.headless_smoke_test:
         CameraHealth()
         SampleSynchronizer()
+        print(f"IMU CNN loaded: {args.model}")
         print("LiteRehab dashboard smoke test: PASS")
         return
 
@@ -221,7 +242,6 @@ def main() -> None:
     if port is None:
         raise SystemExit("No ESP32-S3 serial port found")
     reader = SerialReader(port)
-    cnn = OptionalCNN(args.model)
     multimodal = (MultimodalPredictor(load_multimodal_checkpoint(args.fusion_model))
                   if args.fusion_model is not None else None)
     synchronizer = SampleSynchronizer()
@@ -360,7 +380,7 @@ def main() -> None:
                 f"ROM: {elbow_range:.1f} deg" if elbow_range is not None else "ROM: --",
                 (f"Fusion confidence: {decision.confidence:.2f}"
                  if multimodal_prediction is not None
-                 else f"IMU CNN: {cnn_prediction or 'not loaded'}"),
+                 else f"IMU CNN: {cnn.status_text(cnn_prediction)}"),
             ]
             for i, text in enumerate(overlay):
                 cv2.putText(frame, text, (15, 30 + i * 28),

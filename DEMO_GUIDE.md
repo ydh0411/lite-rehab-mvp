@@ -188,15 +188,16 @@ PYTHONPATH=python python scripts/probe_cameras.py
 ./scripts/start_maixcam2_demo.sh rtsp://<device-ip>:8554/live
 ```
 
-### 4.2 加载深度学习模型（可选）
+### 4.2 CNN-BiGRU 自动加载
 
 ```bash
-python run_dashboard.py --port auto --model models/imu_cnn_bigru.pt
-
-# 真正的视觉—IMU双分支模型（采集并训练后）
-python run_dashboard.py --port auto --side left \
-  --fusion-model models/multimodal_cnn_bigru.pt
+./scripts/start_maixcam2_demo.sh rtsp://10.203.102.1:8554/live
 ```
+
+启动脚本会自动加载 `python/models/imu_cnnbigru.pt`，不需要再填写
+`--model`。模型只使用公开数据训练；静止状态由 ESP32 规则门控，因此不需要
+自行录制动作数据。如果文件缺失，Dashboard 会明确报错并停止，而不会继续显示
+`IMU CNN: not loaded`。
 
 ### 4.3 操作按键
 
@@ -288,16 +289,22 @@ head -5 sessions/demo.csv
 - 肘部屈伸时重力矢量在 Y 轴变化大
 - 结合陀螺仪主导比例 + 加速度计方向确认
 
-### 6.4 CNN-BiGRU 模型（Obukhov et al. 2025）
+### 6.4 CNN-BiGRU 模型
 
 - 架构：3×Conv1D + BiGRU + FC
 - 参数量：~423K，CPU 推理 5-10ms
 - 输入：100 采样窗口 × 6 通道（3 加速度 + 3 陀螺仪）
-- 需要标注数据训练后使用（`--arch cnn_bigru`）
+- 当前检查点使用 3 位公开参与者、3 种上肢动作的 7,600 个采样点训练
+- 静止状态使用 ESP32 规则门控，不使用用户自录数据
 
 ---
 
-## 七、训练数据采集
+## 七、模型数据来源与可选重训
+
+当前演示不需要执行以下自录步骤。模型已使用公开数据集
+<https://doi.org/10.17632/s86tdtmcc2.1> 的小规模子集训练完成。
+
+仅当以后希望针对特定佩戴者提高准确率时，才需要自行采集：
 
 ```bash
 # 每人每类采集 30 秒
@@ -332,7 +339,7 @@ python train_multimodal.py --data multimodal_data --holdout-subject S03 \
   --epochs 30 --output models/multimodal_cnn_bigru.pt
 ```
 
-没有 checkpoint 或模型置信度不足时，Dashboard 自动回退到可直接运行的固件规则，不会阻止演示。
+当前默认检查点缺失时 Dashboard 会明确报错；运行过程中仍以固件规则作为安全回退。公开数据模型只用于课程演示，不代表临床准确性。
 
 ---
 
