@@ -1,78 +1,76 @@
-# LiteRehab-Fusion MVP
+<div align="center">
+  <h1>LiteRehab Fusion</h1>
+  <p>佩戴式 IMU 感知、独立 MaixCAM2 视觉与实时康复反馈。</p>
+  <p>
+    <img src="https://img.shields.io/badge/ESP--IDF-6.0.2-E7352C?logo=espressif" alt="ESP-IDF 6.0.2">
+    <img src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white" alt="Python 3.12">
+    <img src="https://img.shields.io/badge/MaixCAM2-RTSP-6A5ACD" alt="MaixCAM2 RTSP">
+    <img src="https://img.shields.io/badge/IMU-CNN--BiGRU-2E8B57" alt="IMU CNN-BiGRU">
+  </p>
+  <p><a href="README.md">English</a> · <a href="README_zh.md">中文</a></p>
+</div>
 
-[English](README.md) | [中文](README_zh.md)
+LiteRehab Fusion 是一个用于上肢康复演示的双开发板课程与工程原型。MYOSA ESP32 佩戴端通过 BLE 将 IMU 运动数据发送到 ESP32-S3 接收端，同时独立 MaixCAM2 向电脑端 Dashboard 提供视频，实现同步反馈与记录。
 
-LiteRehab 是一个双开发板上肢康复原型。佩戴端 IMU 负责检测手臂运动，ESP32-S3 接收端提供声光反馈，MaixCAM 2 提供姿态识别画面。电脑端 Dashboard 融合两路数据，并保存同步后的训练记录。
+**LiteRehab Fusion 不是医疗器械，也不能替代理疗师。**
 
-本项目用于课程设计和原型演示，不是医疗器械，也不能替代理疗师。
+## 当前系统状态
 
-## 项目能演示什么
+| 组件 | 当前实现 | 状态 |
+|---|---|---|
+| 佩戴式感知 | MYOSA ESP32 + MPU6050，采样率 50 Hz | 可用 |
+| 无线链路 | BLE 佩戴端 → ESP32-S3 接收端 | 可用 |
+| 物理反馈 | 独立 LED + 无源蜂鸣器 | 可用 |
+| 独立摄像头 | MaixCAM2 RTSP over USB NCM | 可用 |
+| 视觉 | 电脑端 MediaPipe 姿态识别 | 可用 |
+| IMU 模型 | 自动加载 CNN-BiGRU checkpoint | 可用 |
+| 记录 | 同步记录 IMU/姿态 CSV，并提供可选预测与标签字段 | 可用 |
 
-- 使用佩戴式 MPU6050 识别并计数肘部屈伸和前臂旋转。
-- 检测动作过快和活动范围不足。
-- 使用 MaixCAM 2 姿态关键点估计肘关节活动范围和躯干代偿。
-- 摄像头中断时保留 IMU-only 反馈，恢复画面后自动回到 Fusion。
-- 记录每一条 IMU 数据及其时间上最接近的有效视觉特征。
-- 默认自动加载使用小规模公开上肢 IMU 数据训练的 CNN-BiGRU；无需用户自行录制动作。
+## 系统工作方式
 
-## 系统结构
-
-```text
-右臂佩戴端                               视觉端
-MYOSA ESP32 + MPU6050                   MaixCAM 2
-        │ BLE                               │ USB UVC（默认）
-        ▼                                   │ 或 RTSP
-ESP32-S3 接收端                             ▼
-LED + 蜂鸣器 + USB 串口 ─────────────► Python Dashboard
-                                       MediaPipe Pose
-                                       规则/模型融合
-                                       同步 CSV
+```mermaid
+flowchart LR
+    W["MYOSA ESP32<br/>MPU6050"] -->|BLE| R["ESP32-S3 接收端<br/>LED + 蜂鸣器"]
+    R -->|USB 串口| D["Python Dashboard"]
+    C["MaixCAM2"] -->|RTSP over USB NCM| D
+    D --> P["MediaPipe 姿态识别"]
+    D --> M["IMU CNN-BiGRU"]
+    P --> F["规则/模型融合<br/>反馈 + 同步 CSV"]
+    M --> F
 ```
 
-MaixCAM 2 不需要与 ESP32 连接 GPIO。MaixCAM 2 和 ESP32-S3 接收端分别使用一条 USB 数据线连接电脑。
+独立摄像头只替换视频输入；MediaPipe、CNN-BiGRU、融合与记录仍运行在电脑端。
 
-## 硬件清单
+## 硬件与接线
 
 | 数量 | 元件 | 用途 |
 |---:|---|---|
-| 1 | MYOSA ESP32 WROOM-32E | 佩戴端控制与 BLE 外设 |
+| 1 | MYOSA ESP32 WROOM-32E | 佩戴端 BLE 控制器 |
+| 1 | MPU6050 | 50 Hz 手臂运动感知 |
+| 1 | SSD1306 128×64 OLED | 佩戴端状态与重复次数显示 |
 | 1 | ESP32-S3-DevKitC-1 N16R8 | BLE 接收和 USB 串口网关 |
-| 1 | MPU6050 | 六轴手臂运动检测 |
-| 1 | SSD1306 128×64 OLED | 显示连接、动作和计数 |
-| 1 | MaixCAM 2 | UVC/RTSP 视觉输入 |
-| 各 1 | 无源蜂鸣器、LED、220–330 Ω 电阻 | 接收端反馈 |
+| 各 1 | LED、220–330 Ω 电阻、无源蜂鸣器 | 独立物理反馈 |
+| 1 | MaixCAM2 | 独立 RTSP 视频源 |
 | 2 | 四芯 JST 线 | 佩戴端 I²C 级联 |
-| 2–3 | USB 数据线 | 接收端、相机及佩戴端供电/烧录 |
-
-### 接线
+| 2–3 | USB 数据线 | 供电、烧录、串口和摄像头网络 |
 
 ```text
-佩戴端：
-MYOSA I²C ── JST ── MPU6050 ── JST ── SSD1306 OLED
-
-接收端：
-GPIO2  ── 220–330 Ω ── LED 长脚；LED 短脚 ── GND
-GPIO18 ── 100–330 Ω ── 无源蜂鸣器正极；蜂鸣器负极 ── GND
-
-相机与电脑：
-MaixCAM 2 Type-C ── USB 数据线 ── 电脑
-ESP32-S3 原生 USB ── 另一条 USB 数据线 ── 电脑
+穿戴端：MYOSA I²C ── MPU6050 ── SSD1306 OLED
+接收端：GPIO2 ── 电阻 ── LED ── GND；GPIO18 ── 电阻 ── 无源蜂鸣器 ── GND
+电脑端：ESP32-S3 原生 USB 与 MaixCAM2 Type-C 分别使用独立 USB 数据线
 ```
 
-MPU6050 应牢固固定在前臂背侧，X 轴指向手部，Z 轴朝向皮肤外侧。上电前请先阅读 [WIRING_GUIDE.md](WIRING_GUIDE.md)。
+将 MPU6050 牢固固定在前臂背侧，X 轴指向手部，Z 轴朝向皮肤外侧。上电前请阅读[完整接线指南](WIRING_GUIDE.md)。
 
 ## 快速开始
 
-### 1. 烧录两块 ESP32
+### 1. 烧录 ESP32 开发板
 
 ```bash
 source ~/.espressif/v6.0.2/esp-idf/export.sh
-
 ./scripts/flash_wearable.sh /dev/cu.usbserial-WEARABLE
 ./scripts/flash_receiver.sh /dev/cu.usbmodem-RECEIVER
 ```
-
-本次 MaixCAM 2 更新不需要重新烧录两块 ESP32。
 
 ### 2. 安装电脑端环境
 
@@ -82,119 +80,71 @@ conda activate literehab
 pip install -r python/requirements.txt
 ```
 
-macOS 弹出提示时需要允许摄像头权限。如果安装的 MediaPipe 使用 Tasks API，请将 `pose_landmarker_lite.task` 放入 `python/models/`。
+### 3. 启动 MaixCAM2 RTSP
 
-### 3. 以 UVC 模式启动 MaixCAM 2
+使用 USB 数据线将 MaixCAM2 连接到电脑，在 MaixVision 中打开 [maixcam2/main.py](maixcam2/main.py)，保持已提交的 `MODE = "rtsp"` 设置并运行。USB NCM 是当前默认网络路径。
 
-1. 在 MaixCAM 2 打开 `Settings → USB Settings`，启用 `UVC`。
-2. 使用 Type-C 数据线将 MaixCAM 2 连接电脑。
-3. 在 MaixVision 中打开 [maixcam2/main.py](maixcam2/main.py)。
-4. 保持 `MODE = "uvc"`，运行文件。
-
-先断开 MaixCAM 2 运行一次检测，再连接后运行一次。新增的编号通常就是 MaixCAM 2：
+### 4. 启动 Dashboard
 
 ```bash
-PYTHONPATH=python python scripts/probe_cameras.py
+PYTHON=python ./scripts/start_maixcam2_demo.sh rtsp://10.203.102.1:8554/live
 ```
 
-### 4. 启动右臂 Dashboard
+如果 USB NCM 地址不同，请从 MaixVision 终端读取准确的 RTSP URL，并传给同一命令。画面叠加信息应显示串口和摄像头均已连接；当右肩、右肘、右手腕和右髋可见时，系统将进入 Fusion 模式。
 
-```bash
-PYTHON=python ./scripts/start_maixcam2_demo.sh <maixcam-index>
-```
+### 可选 UVC 模式
 
-对应的完整命令为：
+需要使用本地摄像头设备时，仍可选择 UVC。将 MaixCAM2 切换到 UVC 输出，使用 `PYTHONPATH=python python scripts/probe_cameras.py` 确认本地摄像头编号，再将该编号传给 `PYTHON=python ./scripts/start_maixcam2_demo.sh`。
 
-```bash
-python python/run_dashboard.py \
-  --port auto \
-  --camera-source <maixcam-index> \
-  --side right \
-  --output python/sessions/maixcam2_demo.csv
-```
+## 演示检查表
 
-左上角应显示 `Serial: connected`、`Camera: connected` 和 `Mode: Fusion`。如果仍显示 `IMU-only`，请后退一些，确保右肩、右肘、右手腕和右髋同时可见。
+将 MaixCAM2 横向放置在与参与者胸口接近的高度，距离约 1.5–2.0 m。
 
-## RTSP 备用方案
-
-电脑无法打开 UVC 设备时，可以改用 RTSP：
-
-1. 将 MaixCAM 2 和电脑连接到同一网络。
-2. 把 [maixcam2/main.py](maixcam2/main.py) 中的 `MODE` 改为 `"rtsp"`。
-3. 在 MaixVision 中运行，复制终端打印的地址。
-4. 使用该地址启动 Dashboard：
-
-```bash
-PYTHON=python ./scripts/start_maixcam2_demo.sh \
-  rtsp://<device-ip>:8554/live
-```
-
-电脑端相机模块支持 `auto`、本地摄像头编号和 `rtsp://` 地址。画面中断后，程序会限制重连频率，并继续记录 IMU 数据。
-
-## 演示流程
-
-将 MaixCAM 2 横向放置在参与者正前方，距离约 1.5–2.0 m，高度与胸口接近。
-
-1. 身体直立、右臂自然下垂。点击 Dashboard 窗口，在窗口获得键盘焦点后按一次小写 `b`，记录躯干基线。
-2. 用 2–3 秒缓慢完成一次肘部屈伸并回到起始位置。
+1. 身体直立、右臂自然下垂；点击 Dashboard 窗口使其获得焦点，然后按小写 `b` 设置躯干基线。
+2. 用 2–3 秒缓慢完成一次肘部屈伸并回到中立位。
 3. 肘部保持约 90°，固定上臂并旋转前臂。
-4. 快速完成一次肘部屈伸，演示 `too_fast` 和两声低音。
-5. 只做小幅度运动，演示 `insufficient_range`。
-6. 屈肘时明显侧倾身体，演示躯干代偿提示。
-7. 短暂遮挡相机。模式会切换到 `IMU-only`，恢复姿态后自动回到 `Fusion`。
-
-Dashboard 按键：
-
-| 按键 | 功能 |
-|---|---|
-| `b` | 重新设置中立位躯干基线 |
-| `r` | 重置当前动作的活动范围 |
-| `q` 或 `Esc` | 退出并关闭 CSV 文件 |
+4. 演示 `too_fast`、`insufficient_range` 和视觉 `trunk_compensation` 反馈。
+5. 短暂遮挡摄像头，确认 Dashboard 回退到 IMU-only 模式，并在姿态跟踪恢复后返回 Fusion。
+6. 按 `r` 重置重复动作的活动范围，或按 `q`/`Esc` 退出并关闭 CSV 文件。
 
 默认会话文件为 `python/sessions/maixcam2_demo.csv`。
 
-## 识别与反馈
+## 模型与数据
 
-| 输出 | 来源 | 含义 |
-|---|---|---|
-| `elbow_flexion` | IMU 规则 | 前臂绕肘关节弯曲并返回 |
-| `forearm_rotation` | IMU 规则 | 前臂绕自身长轴旋转 |
-| `too_fast` | IMU 规则 | 峰值角速度超过设定范围 |
-| `insufficient_range` | IMU 规则 | 积分得到的运动角度过小 |
-| `trunk_compensation` | 视觉 | 肩部相对髋部的位移超过基线范围 |
+Dashboard 默认加载 `python/models/imu_cnnbigru.pt`。该 checkpoint 是一个课堂基线模型，使用 [Wearable sensors-based human activity recognition dataset](https://doi.org/10.17632/s86tdtmcc2.1) 中公开小规模上肢 IMU 子集的 100 采样点窗口训练，因此无需用户自行录制训练动作。
 
-固件规则仍是安全回退路径。Dashboard 默认加载 `python/models/imu_cnnbigru.pt`：该模型只使用 3 位公开参与者的小规模右腕 IMU 子集训练，使用 100 个采样点的窗口。静止状态由 ESP32 的 `idle` 规则门控，不需要用户自行录制训练数据。模型只用于课程演示，不能作为医疗准确性结论。
+CNN-BiGRU 推理运行在电脑端。静止状态由 ESP32 规则门控，固件规则仍是动作识别和反馈的回退路径。本原型不作临床准确性声明。
 
-## 测试
+## 验证
 
-运行完整检查：
+运行完整项目检查：
 
 ```bash
 ./scripts/test_all.sh
 ```
 
-该脚本会运行 C 运动/数据包测试、Python 测试、语法检查、Dashboard 冒烟测试，以及两块 ESP32 的固件构建。目前共有 3 个 C 主机测试和 49 个 Python 测试。
+经验证的完整检查包含 61 项 Python 测试、3 项 C 主机测试、Dashboard 模型加载冒烟测试、佩戴端 ESP-IDF 构建和接收端 ESP-IDF 构建。
 
 ## 项目结构
 
 ```text
 wearable/        MYOSA ESP32 佩戴端固件
 receiver/        ESP32-S3 BLE 接收端固件
-shared/          数据包、动作与反馈公共逻辑
-python/          Dashboard、同步、模型、训练和测试
-maixcam2/        MaixPy UVC/RTSP 相机程序
-scripts/         构建、烧录、相机检测和演示脚本
+shared/          主机测试共用的数据包、动作与反馈逻辑
+python/          电脑端 Dashboard、同步、模型、训练和测试
+maixcam2/        MaixPy RTSP/UVC 摄像头应用
+scripts/         构建、烧录、摄像头探测和演示启动辅助脚本
 tests/           C 语言主机测试
 docs/            设计与实现记录
 ```
 
-## 其他文档
+## 相关文档
 
-- [MaixCAM 2 设置](maixcam2/README.md)
+- [MaixCAM2 设置](maixcam2/README.md)
 - [完整接线指南](WIRING_GUIDE.md)
 - [分步演示指南](DEMO_GUIDE.md)
 - [中英文元器件清单](COMPONENTS.md)
 
-## 安全与范围
+## 安全说明
 
-LiteRehab 不用于诊断、临床评分、治疗处方或无人监督的康复决策。演示过程中，如果参与者出现疼痛、头晕、麻木或其他异常不适，应立即停止。
+LiteRehab Fusion 是用于课程和工程演示的原型，不是医疗器械。它不用于诊断、临床评分、治疗处方或无人监督的康复决策。演示过程中，如果参与者出现疼痛、头晕、麻木或其他异常不适，应立即停止。

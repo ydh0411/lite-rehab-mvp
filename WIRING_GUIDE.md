@@ -88,14 +88,14 @@ MYOSA wearable             ── BLE ──────────────
 ```
 
 1. Use a Type-C **data** cable, not a charge-only cable.
-2. On MaixCAM 2, enable **UVC** in **Settings → USB Settings**.
-3. Run `maixcam2/main.py` through MaixVision with `MODE = "uvc"`.
+2. Enable the MaixCAM 2 USB NCM/network function if the system image requires USB-function selection.
+3. Run `maixcam2/main.py` through MaixVision with its committed `MODE = "rtsp"` and use the RTSP URL printed in the terminal.
 4. Keep MaixCAM 2 1.5–2.0 m away at chest height, in landscape orientation.
 5. For the right-arm demo, keep the right shoulder, elbow, wrist, and hip in frame.
 
 MaixCAM 2 only supplies video. It has no electrical connection to the wearable
-or receiver. If UVC is unavailable, use the built-in RTSP fallback described in
-[`maixcam2/README.md`](maixcam2/README.md). / MaixCAM 2 只提供视频，与穿戴端和接收端没有电气连接。
+or receiver. RTSP over USB NCM is the primary path; optional UVC instructions are
+in [`maixcam2/README.md`](maixcam2/README.md). / MaixCAM 2 只提供视频，与穿戴端和接收端没有电气连接；默认使用 USB NCM 上的 RTSP，可选 UVC 说明见相机文档。
 
 ## 5. Pre-power checklist / 上电前检查
 

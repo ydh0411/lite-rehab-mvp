@@ -1,80 +1,78 @@
-# LiteRehab-Fusion MVP
+<div align="center">
+  <h1>LiteRehab Fusion</h1>
+  <p>Wearable IMU sensing, independent MaixCAM2 vision, and real-time rehabilitation feedback.</p>
+  <p>
+    <img src="https://img.shields.io/badge/ESP--IDF-6.0.2-E7352C?logo=espressif" alt="ESP-IDF 6.0.2">
+    <img src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white" alt="Python 3.12">
+    <img src="https://img.shields.io/badge/MaixCAM2-RTSP-6A5ACD" alt="MaixCAM2 RTSP">
+    <img src="https://img.shields.io/badge/IMU-CNN--BiGRU-2E8B57" alt="IMU CNN-BiGRU">
+  </p>
+  <p><a href="README.md">English</a> · <a href="README_zh.md">中文</a></p>
+</div>
 
-[English](README.md) | [中文](README_zh.md)
+LiteRehab Fusion is a dual-board coursework and engineering prototype for upper-limb rehabilitation demonstrations. A MYOSA ESP32 wearable sends IMU motion data over BLE to an ESP32-S3 receiver, while an independent MaixCAM2 supplies video to a computer dashboard for synchronized feedback and logging.
 
-LiteRehab is a dual-board upper-limb rehabilitation prototype. A wearable IMU detects arm movement, an ESP32-S3 receiver provides immediate feedback, and a MaixCAM 2 supplies video for pose-based checks. The desktop dashboard combines both streams and records synchronized session data.
+**LiteRehab Fusion is not a medical device and does not replace a physiotherapist.**
 
-This is an engineering prototype for coursework and demonstration. It is not a medical device and does not replace a physiotherapist.
+## Current system status
 
-## What the prototype demonstrates
+| Component | Current implementation | Status |
+|---|---|---|
+| Wearable sensing | MYOSA ESP32 + MPU6050 at 50 Hz | Working |
+| Wireless link | BLE wearable → ESP32-S3 receiver | Working |
+| Physical feedback | Independent LED + passive buzzer | Working |
+| Independent camera | MaixCAM2 RTSP over USB NCM | Working |
+| Vision | MediaPipe pose on the computer | Working |
+| IMU model | Auto-loaded CNN-BiGRU checkpoint | Working |
+| Logging | Synchronized IMU/pose CSV with optional prediction and label fields | Working |
 
-- Counts elbow flexion and forearm rotation using a wearable MPU6050.
-- Flags movements that are too fast or have insufficient range.
-- Uses MaixCAM 2 pose landmarks to estimate elbow range of motion and trunk compensation.
-- Falls back to IMU-only feedback if video is lost, then restores fusion automatically.
-- Records every received IMU sample with the nearest valid pose features in CSV.
-- Auto-loads a small CNN-BiGRU trained from a public upper-limb IMU subset; no user-recorded training session is required.
+## How it works
 
-## System overview
-
-```text
-Right-arm wearable                         Vision
-MYOSA ESP32 + MPU6050                     MaixCAM 2
-        │ BLE                                  │ USB UVC (default)
-        ▼                                      │ or RTSP
-ESP32-S3 receiver                              ▼
-LED + buzzer + USB serial ─────────────► Python dashboard
-                                          MediaPipe pose
-                                          rule/model fusion
-                                          synchronized CSV
+```mermaid
+flowchart LR
+    W["MYOSA ESP32<br/>MPU6050"] -->|BLE| R["ESP32-S3 receiver<br/>LED + buzzer"]
+    R -->|USB serial| D["Python Dashboard"]
+    C["MaixCAM2"] -->|RTSP over USB NCM| D
+    D --> P["MediaPipe pose"]
+    D --> M["IMU CNN-BiGRU"]
+    P --> F["Rule/model fusion<br/>feedback + synchronized CSV"]
+    M --> F
 ```
 
-The camera and ESP32 boards do not share GPIO wiring. MaixCAM 2 and the ESP32-S3 receiver connect to the laptop with separate USB data cables.
+MaixCAM2 replaces only the video input. MediaPipe pose processing, CNN-BiGRU inference, rule/model fusion, and synchronized logging all remain on the computer.
 
-## Hardware
+## Hardware and wiring
 
-| Quantity | Part | Use |
+| Quantity | Part | Role |
 |---:|---|---|
-| 1 | MYOSA ESP32 WROOM-32E | Wearable controller and BLE peripheral |
-| 1 | ESP32-S3-DevKitC-1 N16R8 | BLE receiver and USB serial gateway |
-| 1 | MPU6050 | Six-axis arm motion sensing |
+| 1 | MYOSA ESP32 WROOM-32E | Wearable BLE controller |
+| 1 | MPU6050 | 50 Hz arm motion sensing |
 | 1 | SSD1306 128×64 OLED | Wearable status and repetition count |
-| 1 | MaixCAM 2 | UVC/RTSP vision source |
-| 1 each | Passive buzzer, LED, 220–330 Ω resistor | Receiver feedback |
+| 1 | ESP32-S3-DevKitC-1 N16R8 | BLE receiver and USB serial gateway |
+| 1 each | LED, 220–330 Ω resistor, passive buzzer | Independent physical feedback |
+| 1 | MaixCAM2 | Independent RTSP video source |
 | 2 | Four-pin JST cables | Wearable I²C chain |
-| 2–3 | USB data cables | Receiver, MaixCAM 2, and wearable power/flashing |
-
-### Connections
+| 2–3 | USB data cables | Power, flashing, serial, and camera networking |
 
 ```text
-Wearable:
-MYOSA I²C ── JST ── MPU6050 ── JST ── SSD1306 OLED
-
-Receiver:
-GPIO2  ── 220–330 Ω ── LED anode; LED cathode ── GND
-GPIO18 ── 100–330 Ω ── passive buzzer (+); buzzer (-) ── GND
-
-Camera and host:
-MaixCAM 2 Type-C ── USB data cable ── laptop
-ESP32-S3 native USB ── separate USB data cable ── laptop
+Wearable: MYOSA I²C ── MPU6050 ── SSD1306 OLED
+Receiver: GPIO2 ── resistor ── LED ── GND; GPIO18 ── resistor ── passive buzzer ── GND
+Host: ESP32-S3 native USB and MaixCAM2 Type-C use separate USB data cables
 ```
 
-Mount the MPU6050 firmly on the back of the forearm, with its X axis pointing toward the hand and Z axis pointing away from the skin. See [WIRING_GUIDE.md](WIRING_GUIDE.md) before powering the boards.
+Mount the MPU6050 firmly on the back of the forearm, with its X axis pointing toward the hand and Z axis away from the skin. Read the [complete wiring guide](WIRING_GUIDE.md) before powering the boards.
 
 ## Quick start
 
-### 1. Flash the two ESP32 boards
+### 1. Flash the ESP32 boards
 
 ```bash
 source ~/.espressif/v6.0.2/esp-idf/export.sh
-
 ./scripts/flash_wearable.sh /dev/cu.usbserial-WEARABLE
 ./scripts/flash_receiver.sh /dev/cu.usbmodem-RECEIVER
 ```
 
-The current MaixCAM 2 update does not require reflashing either ESP32 board.
-
-### 2. Install the desktop environment
+### 2. Install the computer environment
 
 ```bash
 conda create -n literehab python=3.12 -y
@@ -82,121 +80,71 @@ conda activate literehab
 pip install -r python/requirements.txt
 ```
 
-Allow camera access when macOS asks. If your MediaPipe package uses the Tasks API, place `pose_landmarker_lite.task` in `python/models/`.
+### 3. Start MaixCAM2 RTSP
 
-### 3. Start MaixCAM 2 in UVC mode
+Connect MaixCAM2 to the computer with a USB data cable, open [maixcam2/main.py](maixcam2/main.py) in MaixVision, keep its committed `MODE = "rtsp"`, and run it. USB NCM is the current default network path.
 
-1. On MaixCAM 2, open `Settings → USB Settings` and enable `UVC`.
-2. Connect MaixCAM 2 to the laptop with a Type-C data cable.
-3. Open [maixcam2/main.py](maixcam2/main.py) in MaixVision.
-4. Keep `MODE = "uvc"` and run the file.
-
-Find the camera index by running the probe once with MaixCAM 2 disconnected and once after reconnecting it:
+### 4. Start the dashboard
 
 ```bash
-PYTHONPATH=python python scripts/probe_cameras.py
+PYTHON=python ./scripts/start_maixcam2_demo.sh rtsp://10.203.102.1:8554/live
 ```
 
-The newly appearing index is normally MaixCAM 2.
+If the USB NCM address differs, read the exact RTSP URL from the MaixVision terminal and pass it to the same command. The overlay should report connected serial and camera inputs and enter Fusion mode when the right shoulder, elbow, wrist, and hip are visible.
 
-### 4. Start the right-arm dashboard
+### Optional UVC mode
 
-```bash
-PYTHON=python ./scripts/start_maixcam2_demo.sh <maixcam-index>
-```
+UVC remains available as an alternative when a local camera device is preferable. Switch MaixCAM2 to its UVC output, identify the local camera index with `PYTHONPATH=python python scripts/probe_cameras.py`, and pass that index to `PYTHON=python ./scripts/start_maixcam2_demo.sh`.
 
-Equivalent command:
+## Demo checklist
 
-```bash
-python python/run_dashboard.py \
-  --port auto \
-  --camera-source <maixcam-index> \
-  --side right \
-  --output python/sessions/maixcam2_demo.csv
-```
+Place MaixCAM2 horizontally at chest height, about 1.5–2.0 m from the participant.
 
-The overlay should show `Serial: connected`, `Camera: connected`, and `Mode: Fusion`. If it remains in `IMU-only`, step back until the right shoulder, elbow, wrist, and hip are all visible.
-
-## RTSP fallback
-
-Use RTSP if the laptop cannot open the UVC device:
-
-1. Connect MaixCAM 2 and the laptop to the same network.
-2. Change `MODE` in [maixcam2/main.py](maixcam2/main.py) to `"rtsp"`.
-3. Run it in MaixVision and copy the printed stream URL.
-4. Start the dashboard with that URL:
-
-```bash
-PYTHON=python ./scripts/start_maixcam2_demo.sh \
-  rtsp://<device-ip>:8554/live
-```
-
-The desktop camera layer accepts `auto`, a local camera index, or an `rtsp://` URL. It rate-limits reconnect attempts and keeps IMU logging active during camera loss.
-
-## Demonstration sequence
-
-Place MaixCAM 2 horizontally at chest height, about 1.5–2.0 m from the participant.
-
-1. Stand upright with the right arm relaxed. Click the dashboard window and press lowercase `b` once to set the trunk baseline.
-2. Perform one slow elbow flexion and return to neutral over 2–3 seconds.
+1. Stand upright with the right arm relaxed; focus the dashboard and press lowercase `b` to set the trunk baseline.
+2. Perform a slow elbow flexion and return to neutral over 2–3 seconds.
 3. Hold the elbow near 90° and rotate the forearm while keeping the upper arm still.
-4. Repeat elbow flexion too quickly to trigger `too_fast` and two low tones.
-5. Perform a small partial movement to demonstrate `insufficient_range`.
-6. Lean the torso during elbow flexion to show visual trunk-compensation feedback.
-7. Briefly cover the camera. The mode changes to `IMU-only` and returns to `Fusion` when the pose is visible again.
-
-Dashboard controls:
-
-| Key | Action |
-|---|---|
-| `b` | Reset the neutral trunk baseline |
-| `r` | Reset the current repetition range |
-| `q` or `Esc` | Quit and close the CSV file |
+4. Demonstrate `too_fast`, `insufficient_range`, and visual `trunk_compensation` feedback.
+5. Briefly cover the camera to confirm the dashboard falls back to IMU-only mode and returns to Fusion when pose tracking recovers.
+6. Press `r` to reset the repetition range, or `q`/`Esc` to quit and close the CSV file.
 
 The default session file is `python/sessions/maixcam2_demo.csv`.
 
-## Detection and feedback
+## Model and data
 
-| Output | Source | Meaning |
-|---|---|---|
-| `elbow_flexion` | IMU rules | Forearm bends and returns around the elbow |
-| `forearm_rotation` | IMU rules | Forearm rotates around its long axis |
-| `too_fast` | IMU rules | Peak angular velocity exceeds the configured limit |
-| `insufficient_range` | IMU rules | Integrated movement angle is too small |
-| `trunk_compensation` | Vision | Shoulder-to-hip displacement exceeds the allowed baseline change |
+The dashboard automatically loads `python/models/imu_cnnbigru.pt`. The checkpoint is a classroom baseline trained with 100-sample windows from a small public upper-limb IMU subset of the [Wearable sensors-based human activity recognition dataset](https://doi.org/10.17632/s86tdtmcc2.1), so users do not need to record their own training movements.
 
-Firmware rules remain the safety fallback. The dashboard auto-loads `python/models/imu_cnnbigru.pt`, trained from a small public right-wrist IMU subset using 100-sample windows. ESP32 rule gating supplies the idle state, so no user-recorded training data are required. This checkpoint is a classroom demonstration baseline, not evidence of clinical accuracy.
+CNN-BiGRU inference runs on the computer. The idle state uses the ESP32 rule gate, and firmware rules remain the fallback for motion and feedback. This prototype makes no clinical accuracy claim.
 
-## Tests
+## Verification
 
-Run the full local check:
+Run the complete project check:
 
 ```bash
 ./scripts/test_all.sh
 ```
 
-It runs the C motion/packet tests, Python tests, syntax checks, dashboard smoke test, and both ESP-IDF builds. The current suite contains 3 C host tests and 49 Python tests.
+The verified suite contains 61 Python tests, 3 C host tests, a dashboard checkpoint smoke test, a wearable ESP-IDF build, and a receiver ESP-IDF build.
 
-## Repository layout
+## Repository map
 
 ```text
 wearable/        MYOSA ESP32 firmware
 receiver/        ESP32-S3 BLE receiver firmware
 shared/          Packet, motion, and feedback logic shared by host tests
-python/          Dashboard, synchronization, models, training, and tests
-maixcam2/        MaixPy UVC/RTSP camera application
+python/          Computer dashboard, synchronization, model, training, and tests
+maixcam2/        MaixPy RTSP/UVC camera application
 scripts/         Build, flash, camera probe, and demo launch helpers
 tests/           Host-side C tests
 docs/            Design and implementation records
 ```
 
-## More documentation
+## Documentation
 
-- [MaixCAM 2 setup](maixcam2/README.md)
+- [MaixCAM2 setup](maixcam2/README.md)
 - [Complete wiring guide](WIRING_GUIDE.md)
 - [Step-by-step demonstration guide](DEMO_GUIDE.md)
 - [Bilingual component list](COMPONENTS.md)
 
-## Safety and scope
+## Safety
 
-LiteRehab is not intended for diagnosis, clinical scoring, treatment prescription, or unsupervised rehabilitation decisions. During a demonstration, stop immediately if the participant feels pain, dizziness, numbness, or unusual discomfort.
+LiteRehab Fusion is a coursework and engineering demonstration prototype, not a medical device. It is not intended for diagnosis, clinical scoring, treatment prescription, or unsupervised rehabilitation decisions. Stop the demonstration immediately if the participant feels pain, dizziness, numbness, or unusual discomfort.

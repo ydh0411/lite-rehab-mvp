@@ -1,7 +1,7 @@
 """LiteRehab MaixCAM 2 video source.
 
-Change MODE to ``"rtsp"`` only when USB UVC is unavailable.  Run this file
-from MaixVision after enabling UVC in the MaixCAM 2 USB settings for UVC mode.
+The committed default is RTSP over USB NCM. Change MODE to ``"uvc"`` only
+when the optional local-camera-device workflow is preferred.
 """
 
 from maix import app, camera, image, rtsp, time, uvc
