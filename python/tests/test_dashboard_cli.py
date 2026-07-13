@@ -131,3 +131,12 @@ def test_headless_smoke_test_validates_model_before_passing(tmp_path, monkeypatc
 
     with pytest.raises(FileNotFoundError, match="IMU CNN checkpoint not found"):
         run_dashboard.main()
+
+
+def test_dashboard_runtime_uses_composed_view():
+    source = Path(run_dashboard.__file__).read_text()
+
+    assert "DashboardViewState(" in source
+    assert "render_dashboard(frame, history, view_state)" in source
+    assert "overlay = [" not in source
+    assert "np.hstack((frame, chart))" not in source

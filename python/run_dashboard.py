@@ -23,6 +23,7 @@ from literehab.dashboard_state import (
     synchronized_row,
     trunk_compensation_active,
 )
+from literehab.dashboard_view import DashboardViewState, render_dashboard
 from literehab.fusion import fuse_feedback
 from literehab.multimodal import (
     POSE_FEATURE_NAMES,
@@ -148,28 +149,6 @@ class OptionalCNN:
         with self.torch.no_grad():
             index = int(self.model(tensor).argmax(dim=1).item())
         return self.labels[index]
-
-
-def draw_chart(panel: np.ndarray, history: deque[TelemetrySample]) -> None:
-    panel[:] = (245, 245, 245)
-    cv2.putText(panel, "IMU gyroscope (deg/s)", (15, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (20, 20, 20), 1, cv2.LINE_AA)
-    if len(history) < 2:
-        return
-    values = np.asarray([sample.gyro_dps for sample in history], dtype=np.float32)
-    scale = max(100.0, float(np.abs(values).max()))
-    colors = [(40, 60, 220), (40, 170, 40), (220, 100, 40)]
-    width, height = panel.shape[1], panel.shape[0]
-    for axis in range(3):
-        points = []
-        for i, value in enumerate(values[:, axis]):
-            x = int(10 + i * (width - 20) / max(1, len(values) - 1))
-            y = int(height / 2 - value * (height * 0.38) / scale)
-            points.append((x, y))
-        cv2.polylines(panel, [np.asarray(points)], False, colors[axis], 2)
-    cv2.line(panel, (10, height // 2), (width - 10, height // 2), (120, 120, 120), 1)
-    cv2.putText(panel, "X red   Y green   Z blue", (15, height - 20),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (40, 40, 40), 1, cv2.LINE_AA)
 
 
 def draw_pose(frame: np.ndarray, landmarks) -> None:
@@ -318,8 +297,6 @@ def main() -> None:
             )
             if not ok:
                 frame = np.zeros((600, 800, 3), dtype=np.uint8)
-                cv2.putText(frame, "Camera unavailable - IMU-only mode", (70, 300),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 180, 255), 2)
             else:
                 frame = cv2.resize(frame, (800, 600))
 
@@ -371,24 +348,24 @@ def main() -> None:
             vision_valid = bool(current_pose is not None and current_pose.valid)
             fusion = fuse_feedback(decision.exercise, decision.quality,
                                    elbow_range, trunk_flag, vision_valid)
-            overlay = [
-                f"Mode: {fusion.mode} ({decision.source})",
-                f"Side: {args.side}",
-                f"Exercise: {decision.exercise}", f"Repetitions: {reps}",
-                f"Feedback: {fusion.feedback}", f"Serial: {reader.status}",
-                f"Camera: {camera.status}",
-                f"ROM: {elbow_range:.1f} deg" if elbow_range is not None else "ROM: --",
-                (f"Fusion confidence: {decision.confidence:.2f}"
-                 if multimodal_prediction is not None
-                 else f"IMU CNN: {cnn.status_text(cnn_prediction)}"),
-            ]
-            for i, text in enumerate(overlay):
-                cv2.putText(frame, text, (15, 30 + i * 28),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.62, (30, 240, 255), 2, cv2.LINE_AA)
-
-            chart = np.zeros((600, 480, 3), dtype=np.uint8)
-            draw_chart(chart, history)
-            canvas = np.hstack((frame, chart))
+            confidence_text = (
+                f"Fusion {decision.confidence:.2f}"
+                if multimodal_prediction is not None
+                else cnn.status_text(cnn_prediction)
+            )
+            view_state = DashboardViewState(
+                exercise=decision.exercise,
+                repetitions=reps,
+                feedback=fusion.feedback,
+                mode=fusion.mode,
+                source=decision.source,
+                side=args.side,
+                serial_status=reader.status,
+                camera_status=camera.status,
+                rom_deg=elbow_range,
+                confidence_text=confidence_text,
+            )
+            canvas = render_dashboard(frame, history, view_state)
             cv2.imshow("LiteRehab-Fusion MVP", canvas)
             key = cv2.waitKey(1) & 0xFF
             if key in (27, ord("q")):

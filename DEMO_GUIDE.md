@@ -220,17 +220,18 @@ PYTHONPATH=python python scripts/probe_cameras.py
 
 ### 步骤 2：启动 Dashboard
 
-运行后确认窗口标题为 `LiteRehab-Fusion MVP`，先检查左上角：
+运行后确认窗口标题为 `LiteRehab-Fusion MVP`，先检查顶部状态标签：
 
-- `Serial: connected`
-- `Camera: connected: <index 或 rtsp URL>`
-- `Mode: Fusion`（若仍为 `IMU-only`，后退一点并保持右侧肩、肘、腕、髋完整入镜）
+- `SERIAL` 和 `CAMERA` 标签为绿色
+- 模式标签显示 `FUSION`
+- 若模式显示 `IMU ONLY`，后退一点并保持右侧肩、肘、腕、髋完整入镜
 
 界面包含：
 
-- 左侧：摄像头画面 + MediaPipe 姿态关键点
-- 右侧：IMU 陀螺仪三轴实时曲线（X红 Y绿 Z蓝）
-- 左上叠加信息：Mode / Exercise / Repetitions / Feedback / Serial 状态
+- 顶部：串口、摄像头和融合模式健康标签，绿色表示正常，橙色表示连接中或降级，红色表示不可用
+- 左侧：摄像头画面、MediaPipe 姿态关键点、当前动作和高优先级训练反馈
+- 右侧：训练次数、当前动作、ROM、模型状态，以及 IMU 陀螺仪三轴实时曲线
+- 底部反馈条：绿色表示动作良好，橙色提示减速或增加幅度，红色提示避免躯干代偿
 
 ### 步骤 3：设定基线
 
