@@ -16,6 +16,7 @@ models/
 .vscode/
 .pytest_cache/
 .cache/
+.worktrees/
 
 # macOS
 .DS_Store
