@@ -20,7 +20,9 @@ The project examines whether wearable motion sensing and a camera view of postur
 
 **Posture input:** A MaixCAM2 video stream supplies a wider view of the movement. Computer-based posture estimation is used to check trunk position alongside the forearm signal.
 
-**Analysis and interface:** The dashboard aligns the motion and posture streams, displays the current status, and stores a synchronized session record. A classroom CNN-BiGRU baseline is available with a rule-based fallback.
+**Analysis:** The two streams are aligned by timestamp. The current implementation checks movement speed, range, and trunk compensation. A classroom CNN-BiGRU baseline is available for exercise recognition with a rule-based fallback.
+
+**Interface and session record:** The dashboard displays the current exercise state and repetition count. Motion and posture data are stored together for later inspection.
 
 ## Prototype capabilities
 
@@ -38,9 +40,13 @@ The current MVP demonstrates:
 
 **Between appointments:** A physiotherapist could review the session record when discussing home practice. Exercise selection and all clinical decisions remain with the physiotherapist.
 
-## Limitations and next steps
+## Limitations
 
 The exercise set is limited, and the classroom model was trained on a small public dataset. The prototype has not been clinically validated and makes no claim about diagnostic accuracy or patient outcomes.
+
+LiteRehab Fusion is not a medical device. It does not diagnose, prescribe treatment, score recovery, or replace professional supervision.
+
+## Next steps
 
 The next step is supervised usability testing with physiotherapists and representative users. This work would examine the clarity and timing of the feedback and guide the collection of more representative movement data.
 
@@ -73,4 +79,4 @@ The earlier version used message-led headings, a diagram with promotional cue la
 
 ### Final rewrite
 
-The final copy uses conventional report headings and describes the system in plain technical language. It separates demonstrated capability from intended use, keeps conditional wording for later physiotherapist review, and states the limits directly. The flow diagram and invented prompt strip have been removed. The remaining claims are bounded by the current repository and demo workflow.
+The final copy uses conventional report headings and describes the system in plain technical language. It separates demonstrated capability from intended use, keeps conditional wording for later physiotherapist review, and states the limits directly. The flow diagram, invented prompt strip, grey metadata label, and separate disclaimer footer have been removed. The remaining claims are bounded by the current repository and demo workflow.

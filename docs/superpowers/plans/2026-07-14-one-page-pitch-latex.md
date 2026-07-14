@@ -4,7 +4,7 @@
 
 **Goal:** Redesign the LiteRehab Fusion one-page pitch as a restrained A4 technical report with balanced institutional marks and natural, claim-bounded English copy.
 
-**Architecture:** Keep claim-bounded copy and its audit in Markdown and typeset the original course-slide logos and copy through one editable LaTeX source. Use a full-width summary followed by a regular two-column report body, one Helvetica-like family throughout, and a muted navy/charcoal/grey palette. Compile and inspect the PDF mechanically and visually after every meaningful layout change.
+**Architecture:** Keep claim-bounded copy and its audit in Markdown and typeset the original course-slide logos and copy through one editable LaTeX source. Use a full-width summary followed by a regular two-column report body, one Helvetica-like family throughout, and navy headings with charcoal body text. Compile and inspect the PDF mechanically and visually after every meaningful layout change.
 
 **Tech Stack:** Markdown; pdfLaTeX; `helvet`, `geometry`, `microtype`, `graphicx`, `xcolor`, `tabularx`, and `enumitem`; Poppler `pdfinfo`, `pdffonts`, `pdftotext`, and `pdftoppm`; original PNG assets embedded in `Day 3 Slide Deck.pptx`.
 
@@ -19,7 +19,8 @@
 - Use conventional report headings: `Summary`, `Background`, `Aim`, `System design`, `Prototype capabilities`, `Intended use`, and `Limitations and next steps`.
 - Remove decorative heading lines, the system flow diagram, and the example-prompt strip.
 - Do not include test counts, build targets, smoke-test results, or other software-development validation in the visible pitch.
-- State that LiteRehab Fusion is an engineering prototype, not a medical device, and make no clinical-effectiveness claim.
+- State within the main limitations section that LiteRehab Fusion is an engineering prototype, not a medical device, and make no clinical-effectiveness claim.
+- Do not use small grey uppercase metadata above the title or in a separate footer.
 - Preserve the user's modified source files and unrelated untracked course documents; stage only pitch deliverables.
 
 ---
@@ -168,49 +169,43 @@ Use this preamble and hierarchy:
 \usepackage[scaled=0.96]{helvet}
 \renewcommand{\familydefault}{\sfdefault}
 \usepackage[protrusion=true,expansion=true]{microtype}
-\usepackage[left=14mm,right=14mm,top=10mm,bottom=10mm]{geometry}
-\usepackage{graphicx,xcolor,tabularx,enumitem,tikz}
-\usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage[left=15mm,right=15mm,top=9mm,bottom=7mm]{geometry}
+\usepackage{graphicx,xcolor,tabularx,enumitem}
 
 \definecolor{PitchNavy}{HTML}{16324F}
 \definecolor{PitchInk}{HTML}{20252B}
-\definecolor{PitchMuted}{HTML}{626B73}
-\definecolor{PitchPale}{HTML}{F3F5F6}
-\definecolor{PitchRule}{HTML}{D9DEE2}
-
-\newcommand{\sectionhead}[1]{{\bfseries\color{PitchNavy}\fontsize{12.6}{13.8}\selectfont #1\par}}
-\newcommand{\metatext}[1]{{\bfseries\color{PitchMuted}\fontsize{7.6}{8.3}\selectfont\MakeUppercase{#1}}}
+\newcommand{\sectionhead}[1]{{\bfseries\color{PitchNavy}\fontsize{13.0}{14.4}\selectfont #1\par}}
 ```
 
 Remove `lmodern`, the navy full-width title box, generic `\sectiontitle`, repeated vertical rules, and the bottom `\vfill`.
 
 - [ ] **Step 2: Build the institutional and title area**
 
-Create a centred `tabularx` row with the Glasgow wordmark on the left, CUHK wordmark centred, and UESTC seal on the right. Size by optical footprint: approximately `25mm` wide, `42mm` wide, and `18mm` high. Place `BMEG3920 · ONE-PAGE PITCH` below the marks, followed by a 27-29 pt Helvetica-compatible title and the humanized tagline. Keep the header white and use navy text without a coloured banner or decorative underline.
+Create a centred `tabularx` row with the Glasgow wordmark on the left, CUHK wordmark centred, and UESTC seal on the right. Size by optical footprint: approximately `29mm` wide, `44mm` wide, and `16mm` high. Place the 29 pt title and the tagline directly below the marks. Do not add a small grey course label, coloured banner, or decorative underline.
 
 - [ ] **Step 3: Build the asymmetric two-column body**
 
-Use two columns separated by whitespace. The wider main column contains:
+Use two equal columns separated by whitespace. The left column contains:
 
 1. `Background` with the complete problem paragraph.
 2. `Aim` with the concise project objective.
 3. `System design` with short prose subsections for the wearable unit, posture input, and analysis interface.
 
-The side column contains:
+The right column contains:
 
-1. a pale capability panel headed `What the prototype does today`;
+1. a plain-text capability section headed `Prototype capabilities`;
 2. a user-value block headed `Intended use`;
-3. a restrained block headed `Limitations and next steps`.
+3. separate `Limitations` and `Next steps` sections.
 
-Use 9.35 pt body text with 11.1 pt leading and compact bullets. Do not solve overflow by reducing body text below 9 pt.
+Use 10.5 pt body text with 12.8 pt leading and compact bullets. Fill the page down to a normal print margin through readable type and section spacing, not decorative content.
 
 - [ ] **Step 4: Typeset the system design as report prose**
 
 Use `Wearable unit`, `Posture input`, and `Analysis and interface` as short bold subheadings. Describe the hardware and software path in complete sentences. Do not add a flow diagram, nodes, connectors, icons, or a separate strip of example feedback prompts.
 
-- [ ] **Step 5: Add the limitation footer**
+- [ ] **Step 5: Integrate the safety boundary into the limitations section**
 
-Use a thin top rule and one compact paragraph across the full width. Start with `COURSEWORK PROTOTYPE · NOT A MEDICAL DEVICE` in a small sans-serif label. Include the complete limitation language without creating another large content box.
+Include `LiteRehab Fusion is not a medical device` and the complete limitation language as normal body copy under `Limitations`. Do not add a separate footer, thin rule, grey metadata, or uppercase disclaimer label.
 
 - [ ] **Step 6: Compile and inspect warnings**
 

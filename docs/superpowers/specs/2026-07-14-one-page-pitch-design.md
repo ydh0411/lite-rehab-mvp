@@ -33,7 +33,7 @@ Use an A4 portrait academic product brief rather than a miniature research poste
 5. A short account of what the working prototype does today.
 6. A paired patient and physiotherapist value block.
 7. A single next step: supervised usability testing with physiotherapists and representative users.
-8. A restrained footer stating that the work is a coursework engineering prototype and not a medical device.
+8. A limitation paragraph within the main report stating that the work is a coursework engineering prototype and not a medical device.
 
 The full-width summary should establish the project and its scope. The two equal body columns should then cover the background, aim, system design, demonstrated capabilities, intended use, limitations, and next step. Avoid a sequence of equally weighted boxes.
 
@@ -82,7 +82,7 @@ Use a clean one-page technical report rather than a poster, brochure, or infogra
 
 Use one Helvetica-like sans serif family (`helvet`, rendered as Nimbus Sans) throughout the title, headings, body copy, and labels. Keep body copy at least 9 pt. Establish hierarchy through size, weight, spacing, and alignment rather than mixed typefaces, repeated coloured boxes, underlines, or decorative rules.
 
-Use muted institutional navy (`#16324F`) as the only chromatic accent. Use charcoal for body text and neutral greys for supporting text, rules, and the one optional background panel. Do not use bright cyan or teal. The institutional row must keep all three marks optically balanced even though their aspect ratios differ: size the Glasgow wordmark by width, the CUHK wordmark by width, and the UESTC seal by height rather than applying one common image height.
+Use muted institutional navy (`#16324F`) as the only chromatic accent and charcoal for body text. Do not use grey uppercase metadata labels, a grey disclaimer footer, bright cyan, or teal. The institutional row must keep all three marks optically balanced even though their aspect ratios differ: size the Glasgow wordmark by width, the CUHK wordmark by width, and the UESTC seal by height rather than applying one common image height.
 
 Describe the system under `System design` using three short subheadings: `Wearable unit`, `Posture input`, and `Analysis and interface`. Do not use nodes, connectors, icons, gradients, shadows, or a prompt strip.
 
@@ -97,7 +97,7 @@ Use conventional academic poster headings. This is more appropriate here than sl
 
 Do not add a strip of example prompts such as "Slow down", "Increase the range", or "Keep the trunk still". Describe feedback categories in the prose without presenting them as invented interface copy.
 
-Remove the current bottom `\vfill` behaviour and allocate the page height explicitly. The final layout should not contain a conspicuous empty lower third. Whitespace should separate ideas and establish hierarchy, while the content should still occupy the page confidently at normal print size.
+Remove the bottom metadata footer and allocate the page height explicitly. The report should occupy the page down to a normal print margin, without a conspicuous empty lower section. Whitespace should separate ideas and establish hierarchy rather than reserving space for decorative footer content.
 
 The compiled page must have no overflow, clipped text, unresolved references, missing glyphs, or content on a second page. Verify the final PDF by rendering it to an image and inspecting the full page at normal reading size.
 

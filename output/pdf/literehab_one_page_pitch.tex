@@ -5,7 +5,7 @@
 \usepackage[scaled=0.96]{helvet}
 \renewcommand{\familydefault}{\sfdefault}
 \usepackage[protrusion=true,expansion=true]{microtype}
-\usepackage[left=15mm,right=15mm,top=10mm,bottom=11mm]{geometry}
+\usepackage[left=15mm,right=15mm,top=9mm,bottom=7mm]{geometry}
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{tabularx}
@@ -13,8 +13,6 @@
 
 \definecolor{ReportNavy}{HTML}{16324F}
 \definecolor{ReportInk}{HTML}{22272D}
-\definecolor{ReportMuted}{HTML}{65717A}
-\definecolor{ReportRule}{HTML}{D8DDE1}
 
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
@@ -32,19 +30,16 @@
 }
 
 \newcommand{\sectionhead}[1]{%
-  {\bfseries\color{ReportNavy}\fontsize{12.4}{13.8}\selectfont #1\par}%
-  \vspace{1.5mm}%
+  {\bfseries\color{ReportNavy}\fontsize{13.0}{14.4}\selectfont #1\par}%
+  \vspace{1.8mm}%
 }
 \newcommand{\subhead}[1]{%
-  {\bfseries\color{ReportNavy}\fontsize{9.7}{10.8}\selectfont #1\par}%
-}
-\newcommand{\metatext}[1]{%
-  {\bfseries\color{ReportMuted}\fontsize{7.5}{8.2}\selectfont\MakeUppercase{#1}}%
+  {\bfseries\color{ReportNavy}\fontsize{10.2}{11.4}\selectfont #1\par}%
 }
 
 \begin{document}
 \color{ReportInk}
-\fontsize{10.0}{12.1}\selectfont
+\fontsize{10.5}{12.8}\selectfont
 \raggedright
 
 % Institutional marks are balanced by optical footprint.
@@ -54,16 +49,13 @@
   \raisebox{-0.5\height}{\includegraphics[height=16mm]{../../assets/institutions/uestc.png}}
 \end{tabularx}
 
-\vspace{4.0mm}
-\metatext{BMEG3920 \enspace/\enspace One-page project pitch}
-
-\vspace{1.7mm}
+\vspace{6.0mm}
 {\bfseries\color{ReportNavy}\fontsize{29}{30.5}\selectfont LiteRehab Fusion}\par
-\vspace{1.2mm}
-{\color{ReportMuted}\fontsize{11.5}{13.2}\selectfont
+\vspace{1.6mm}
+{\color{ReportInk}\fontsize{11.7}{13.5}\selectfont
 Real-time feedback for upper-limb rehabilitation practice at home.}\par
 
-\vspace{6.0mm}
+\vspace{7.2mm}
 \sectionhead{Summary}
 LiteRehab Fusion is a coursework engineering prototype that combines a
 forearm-worn motion sensor with camera-based posture estimation. The system
@@ -72,7 +64,7 @@ movement features, and records synchronized motion and posture data. It is
 designed to support home practice under professional guidance; it does not
 make treatment decisions or assess clinical recovery.
 
-\vspace{6.0mm}
+\vspace{7.0mm}
 
 \begin{minipage}[t]{0.477\linewidth}
   \vspace{0pt}\raggedright
@@ -84,14 +76,14 @@ make treatment decisions or assess clinical recovery.
   physiotherapist usually reviews progress at a later appointment rather than
   observing each repetition.
 
-  \vspace{5.2mm}
+  \vspace{6.5mm}
   \sectionhead{Aim}
   The project examines whether wearable motion sensing and a camera view of
   posture can provide immediate, understandable feedback during a prescribed
   upper-limb exercise. A synchronized session record is retained for possible
   later review.
 
-  \vspace{5.2mm}
+  \vspace{6.5mm}
   \sectionhead{System design}
 
   \subhead{Wearable unit}
@@ -100,19 +92,25 @@ make treatment decisions or assess clinical recovery.
   samples over BLE to an ESP32-S3 receiver, which maintains the local exercise
   state and repetition count.
 
-  \vspace{3.5mm}
+  \vspace{4.2mm}
   \subhead{Posture input}
   \vspace{0.8mm}
   A MaixCAM2 video stream supplies a wider view of the movement. Computer-based
   posture estimation is used to check trunk position alongside the forearm
   signal.
 
-  \vspace{3.5mm}
-  \subhead{Analysis and interface}
+  \vspace{4.2mm}
+  \subhead{Analysis}
   \vspace{0.8mm}
-  The dashboard aligns the motion and posture streams, displays the current
-  status, and stores a synchronized session record. A classroom CNN-BiGRU
-  baseline is available with a rule-based fallback.
+  The two streams are aligned by timestamp. The current implementation checks
+  movement speed, range, and trunk compensation. A classroom CNN-BiGRU
+  baseline is available for exercise recognition with a rule-based fallback.
+
+  \vspace{4.2mm}
+  \subhead{Interface and session record}
+  \vspace{0.8mm}
+  The dashboard displays the current exercise state and repetition count.
+  Motion and posture data are stored together for later inspection.
 
 \end{minipage}
 \hfill
@@ -129,7 +127,7 @@ make treatment decisions or assess clinical recovery.
     \item local status feedback and synchronized IMU and pose logging.
   \end{itemize}
 
-  \vspace{5.0mm}
+  \vspace{6.5mm}
   \sectionhead{Intended use}
 
   \subhead{During home practice}
@@ -137,33 +135,29 @@ make treatment decisions or assess clinical recovery.
   The person receives feedback while performing the exercise, leaving time to
   adjust a later repetition in the same session.
 
-  \vspace{3.5mm}
+  \vspace{4.2mm}
   \subhead{Between appointments}
   \vspace{0.8mm}
   A physiotherapist could review the session record when discussing home
   practice. Exercise selection and all clinical decisions remain with the
   physiotherapist.
 
-  \vspace{5.2mm}
-  \sectionhead{Limitations and next steps}
+  \vspace{6.5mm}
+  \sectionhead{Limitations}
   The exercise set is limited, and the classroom model was trained on a small
   public dataset. The prototype has not been clinically validated and makes no
   claim about diagnostic accuracy or patient outcomes.
 
   \vspace{2.3mm}
+  LiteRehab Fusion is not a medical device. It does not diagnose, prescribe
+  treatment, score recovery, or replace professional supervision.
+
+  \vspace{6.5mm}
+  \sectionhead{Next steps}
   The next step is supervised usability testing with physiotherapists and
   representative users. This work would examine the clarity and timing of the
   feedback and guide the collection of more representative movement data.
 
 \end{minipage}
-
-\vspace{6.0mm}
-{\color{ReportRule}\rule{\linewidth}{0.45pt}}\par
-\vspace{2.0mm}
-\metatext{Coursework engineering prototype \enspace/\enspace Not a medical device}\par
-\vspace{1.1mm}
-{\color{ReportMuted}\fontsize{8.5}{10.0}\selectfont
-LiteRehab Fusion does not diagnose, prescribe treatment, score recovery, or
-replace professional supervision.}
 
 \end{document}
