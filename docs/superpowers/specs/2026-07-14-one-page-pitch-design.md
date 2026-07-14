@@ -24,14 +24,18 @@ LiteRehab Fusion gives people practising upper-limb rehabilitation at home immed
 
 ## Page structure
 
-1. Product name and short tagline.
-2. A concrete description of the home-practice problem.
-3. The gap in current practice: limited immediate feedback between appointments.
-4. The LiteRehab solution and its user-facing behaviour.
-5. A compact system flow: wearable IMU to BLE receiver and computer dashboard, combined with MaixCAM2 pose input.
-6. What the MVP currently demonstrates.
-7. Benefits for the patient and physiotherapist.
-8. A plausible route to adoption, explicit limitations, and a specific next-step request.
+Use an A4 portrait academic product brief rather than a miniature research poster. The page should read from top to bottom, with an asymmetric two-column body beneath the title.
+
+1. A slim institutional row using the Glasgow, CUHK, and UESTC marks already embedded in the course slide deck.
+2. Product name, course context, and one short value proposition.
+3. A concise problem-to-response narrative led by message-based headings rather than generic labels.
+4. A compact horizontal system flow: wearable motion sensing and camera posture tracking feed synchronized analysis, which produces an immediate coaching cue.
+5. A short account of what the working prototype does today.
+6. A paired patient and physiotherapist value block.
+7. A single next step: supervised usability testing with physiotherapists and representative users.
+8. A restrained footer stating that the work is a coursework engineering prototype and not a medical device.
+
+The main column should carry the problem, response, and flow. The narrower column should carry current capability, user value, and the next step. Avoid a sequence of equally weighted boxes.
 
 ## Required evidence
 
@@ -44,10 +48,9 @@ The pitch may state that the current MVP:
 - provides feedback for excessive speed, insufficient range, and trunk compensation;
 - displays local status and repetition count and provides LED or buzzer feedback;
 - records synchronized IMU and pose information for later review;
-- automatically loads a classroom CNN-BiGRU baseline trained on a small public upper-limb IMU subset;
-- has passed 70 Python tests, three C host tests, a model-loading smoke test, and builds for both ESP32 targets.
+- automatically loads a classroom CNN-BiGRU baseline trained on a small public upper-limb IMU subset.
 
-Testing and successful builds demonstrate engineering readiness for a classroom proof of concept. They do not demonstrate clinical effectiveness, diagnostic accuracy, or improved patient outcomes.
+Do not include test counts, build targets, smoke-test results, or similar software-development evidence in the visible pitch. These details are useful for internal engineering validation but do not strengthen the audience-facing product story. The pitch must not imply clinical effectiveness, diagnostic accuracy, or improved patient outcomes.
 
 ## Business and adoption framing
 
@@ -75,11 +78,40 @@ The tagline is:
 
 Produce the final pitch in LaTeX as a single A4 portrait page. Keep the source editable and compile it into a submission-ready PDF.
 
-Use a clean academic product-brief layout rather than a poster or a two-column conference-paper template. The page should have a strong title area, compact content blocks, a simple system-flow graphic, and enough whitespace to remain readable when printed. Use standard or bundled LaTeX packages and embed no remote assets.
+Use a clean academic product-brief layout rather than a poster or a two-column conference-paper template. Borrow the visual discipline of top-conference posters---clear alignment, decisive hierarchy, economical text, and an obvious reading path---without filling the page with research figures. The page should have a strong title area, an asymmetric two-column grid, a simple vector system-flow graphic, and controlled rather than excessive whitespace.
 
-Use Latin Modern, the scalable version of LaTeX's standard Computer Modern paper typeface, for the body and headings. Use restrained dark blue and teal accents only for hierarchy, rules, and the system diagram. Do not use decorative fonts, oversized marketing typography, gradients, shadows, stock icons, or dense boxed layouts. Body text must remain at least 9 pt in the final PDF.
+Use a Times-like academic serif (`newtxtext`) for body copy and a Helvetica-like sans serif (`helvet` or TeX Gyre Heros) for the title, message headings, labels, and flow nodes. This hybrid should feel more familiar than Latin Modern while preserving fast scanning. Keep body copy at least 9 pt, use visibly larger message headings, and distinguish levels primarily through size, weight, spacing, and alignment rather than repeated coloured boxes.
+
+Use Glasgow navy as the primary accent and a restrained cyan/teal as a secondary accent, consistent with the course slides. The institutional row must keep all three marks optically balanced even though their original aspect ratios differ. Extract the original embedded SVG/PNG assets from `Day 3 Slide Deck.pptx`; do not download substitutes or rasterize the Glasgow SVG unnecessarily.
+
+The system flow should use four flat, horizontally aligned nodes with thin directional connectors and short verb-led labels. It should read:
+
+> Wearable motion sensing + Camera posture tracking -> Synchronized analysis -> Immediate coaching cue
+
+The two sensing inputs should visibly converge before analysis. Use no gradients, shadows, 3D effects, stock icons, or ornamental arrows.
+
+Replace formulaic headings such as "The gap", "Our response", "How it works", and "Who benefits" with headings that carry the argument. Working examples are:
+
+- `Feedback arrives too late`
+- `LiteRehab responds during the repetition`
+- `Motion and posture, seen together`
+- `What the prototype does today`
+- `Built for both sides of rehabilitation`
+- `Next: supervised usability testing`
+
+Use these as working language, not a rigid template. The final wording should be natural, concise, and balanced in the available space.
+
+Remove the current bottom `\vfill` behaviour and allocate the page height explicitly. The final layout should not contain a conspicuous empty lower third. Whitespace should separate ideas and establish hierarchy, while the content should still occupy the page confidently at normal print size.
 
 The compiled page must have no overflow, clipped text, unresolved references, missing glyphs, or content on a second page. Verify the final PDF by rendering it to an image and inspecting the full page at normal reading size.
+
+## Visual references
+
+The design takes principles, not a literal template, from:
+
+- the CVPR 2025 poster guidance, especially its advice on column-based reading, limited text, and designing for a crowded session;
+- the ICML 2025 poster instructions and public poster examples, especially their strong title hierarchy, content-specific headings, and clear left-to-right flow;
+- the BMEG3920 course slides, which establish the three-institution header and navy/cyan visual identity.
 
 ## Deliverables
 
