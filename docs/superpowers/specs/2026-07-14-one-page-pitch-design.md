@@ -28,14 +28,14 @@ Use an A4 portrait academic product brief rather than a miniature research poste
 
 1. A slim institutional row using the Glasgow, CUHK, and UESTC marks already embedded in the course slide deck.
 2. Product name, course context, and one short value proposition.
-3. A concise problem-to-response narrative led by message-based headings rather than generic labels.
-4. A compact horizontal system flow: wearable motion sensing and camera posture tracking feed synchronized analysis, which produces an immediate coaching cue.
+3. A concise problem-to-response narrative under conventional academic section headings.
+4. A concise prose description of the wearable unit, posture input, and analysis interface.
 5. A short account of what the working prototype does today.
 6. A paired patient and physiotherapist value block.
 7. A single next step: supervised usability testing with physiotherapists and representative users.
 8. A restrained footer stating that the work is a coursework engineering prototype and not a medical device.
 
-The main column should carry the problem, response, and flow. The narrower column should carry current capability, user value, and the next step. Avoid a sequence of equally weighted boxes.
+The full-width summary should establish the project and its scope. The two equal body columns should then cover the background, aim, system design, demonstrated capabilities, intended use, limitations, and next step. Avoid a sequence of equally weighted boxes.
 
 ## Required evidence
 
@@ -78,28 +78,24 @@ The tagline is:
 
 Produce the final pitch in LaTeX as a single A4 portrait page. Keep the source editable and compile it into a submission-ready PDF.
 
-Use a clean academic product-brief layout rather than a poster or a two-column conference-paper template. Borrow the visual discipline of top-conference posters---clear alignment, decisive hierarchy, economical text, and an obvious reading path---without filling the page with research figures. The page should have a strong title area, an asymmetric two-column grid, a simple vector system-flow graphic, and controlled rather than excessive whitespace.
+Use a clean one-page technical report rather than a poster, brochure, or infographic. Borrow only the typographic discipline of current ICML, CVPR, and AAAI materials: clear alignment, economical text, a strong title area, and an obvious reading path. Place a short full-width summary beneath the title, followed by a regular two-column report body. Do not include a flow diagram.
 
-Use a Times-like academic serif (`newtxtext`) for body copy and a Helvetica-like sans serif (`helvet` or TeX Gyre Heros) for the title, message headings, labels, and flow nodes. This hybrid should feel more familiar than Latin Modern while preserving fast scanning. Keep body copy at least 9 pt, use visibly larger message headings, and distinguish levels primarily through size, weight, spacing, and alignment rather than repeated coloured boxes.
+Use one Helvetica-like sans serif family (`helvet`, rendered as Nimbus Sans) throughout the title, headings, body copy, and labels. Keep body copy at least 9 pt. Establish hierarchy through size, weight, spacing, and alignment rather than mixed typefaces, repeated coloured boxes, underlines, or decorative rules.
 
-Use Glasgow navy as the primary accent and a restrained cyan/teal as a secondary accent, consistent with the course slides. The institutional row must keep all three marks optically balanced even though their original aspect ratios differ. Extract the original embedded SVG/PNG assets from `Day 3 Slide Deck.pptx`; do not download substitutes or rasterize the Glasgow SVG unnecessarily.
+Use muted institutional navy (`#16324F`) as the only chromatic accent. Use charcoal for body text and neutral greys for supporting text, rules, and the one optional background panel. Do not use bright cyan or teal. The institutional row must keep all three marks optically balanced even though their aspect ratios differ: size the Glasgow wordmark by width, the CUHK wordmark by width, and the UESTC seal by height rather than applying one common image height.
 
-The system flow should use four flat, horizontally aligned nodes with thin directional connectors and short verb-led labels. It should read:
+Describe the system under `System design` using three short subheadings: `Wearable unit`, `Posture input`, and `Analysis and interface`. Do not use nodes, connectors, icons, gradients, shadows, or a prompt strip.
 
-> Wearable motion sensing + Camera posture tracking -> Synchronized analysis -> Immediate coaching cue
+Use conventional academic poster headings. This is more appropriate here than slogan-like or message-led headings. The required headings are:
 
-The two sensing inputs should visibly converge before analysis. Use no gradients, shadows, 3D effects, stock icons, or ornamental arrows.
+- `Background`
+- `Aim`
+- `System design`
+- `Prototype capabilities`
+- `Intended use`
+- `Limitations and next steps`
 
-Replace formulaic headings such as "The gap", "Our response", "How it works", and "Who benefits" with headings that carry the argument. Working examples are:
-
-- `Feedback arrives too late`
-- `LiteRehab responds during the repetition`
-- `Motion and posture, seen together`
-- `What the prototype does today`
-- `Built for both sides of rehabilitation`
-- `Next: supervised usability testing`
-
-Use these as working language, not a rigid template. The final wording should be natural, concise, and balanced in the available space.
+Do not add a strip of example prompts such as "Slow down", "Increase the range", or "Keep the trunk still". Describe feedback categories in the prose without presenting them as invented interface copy.
 
 Remove the current bottom `\vfill` behaviour and allocate the page height explicitly. The final layout should not contain a conspicuous empty lower third. Whitespace should separate ideas and establish hierarchy, while the content should still occupy the page confidently at normal print size.
 
@@ -110,8 +106,8 @@ The compiled page must have no overflow, clipped text, unresolved references, mi
 The design takes principles, not a literal template, from:
 
 - the CVPR 2025 poster guidance, especially its advice on column-based reading, limited text, and designing for a crowded session;
-- the ICML 2025 poster instructions and public poster examples, especially their strong title hierarchy, content-specific headings, and clear left-to-right flow;
-- the BMEG3920 course slides, which establish the three-institution header and navy/cyan visual identity.
+- the ICML 2025 poster instructions and public poster examples, especially their strong title hierarchy, economical text, and clear alignment;
+- the BMEG3920 course slides, which establish the three-institution header.
 
 ## Deliverables
 

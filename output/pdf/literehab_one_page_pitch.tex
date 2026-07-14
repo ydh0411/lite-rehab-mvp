@@ -1,252 +1,169 @@
+\RequirePackage{fix-cm}
 \documentclass[10pt,a4paper]{article}
 
 \usepackage[T1]{fontenc}
-\usepackage{newtxtext}
-\usepackage[scaled=0.94]{helvet}
+\usepackage[scaled=0.96]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
 \usepackage[protrusion=true,expansion=true]{microtype}
-\usepackage[left=14mm,right=14mm,top=10mm,bottom=10mm]{geometry}
+\usepackage[left=15mm,right=15mm,top=10mm,bottom=11mm]{geometry}
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{tabularx}
 \usepackage{enumitem}
-\usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning,calc}
 
-\definecolor{PitchNavy}{HTML}{071B58}
-\definecolor{PitchTeal}{HTML}{35BFC8}
-\definecolor{PitchInk}{HTML}{182234}
-\definecolor{PitchMuted}{HTML}{5B6470}
-\definecolor{PitchPale}{HTML}{EEF6F7}
-\definecolor{PitchRule}{HTML}{D7DEE5}
+\definecolor{ReportNavy}{HTML}{16324F}
+\definecolor{ReportInk}{HTML}{22272D}
+\definecolor{ReportMuted}{HTML}{65717A}
+\definecolor{ReportRule}{HTML}{D8DDE1}
 
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{3.0pt}
+\setlength{\parskip}{3pt}
 \setlength{\emergencystretch}{1.5em}
+\hyphenpenalty=7000
+\exhyphenpenalty=7000
 \setlist[itemize]{
   leftmargin=4.2mm,
-  label=\raisebox{0.25ex}{\color{PitchTeal!75!PitchNavy}\rule{0.75mm}{0.75mm}},
-  itemsep=2.4pt,
+  label=\raisebox{0.32ex}{\color{ReportNavy}\rule{0.65mm}{0.65mm}},
+  itemsep=3.0pt,
   topsep=2.5pt,
   parsep=0pt,
   partopsep=0pt
 }
 
-\newcommand{\displayfont}{\fontfamily{phv}\selectfont}
-\DeclareRobustCommand{\sepmark}{%
-  \raisebox{0.3ex}{\color{PitchTeal!70!PitchNavy}\rule{0.75mm}{0.75mm}}%
-}
-\newcommand{\eyebrow}[1]{%
-  {\displayfont\bfseries\color{PitchTeal!70!PitchNavy}%
-  \fontsize{7.8}{8.5}\selectfont\MakeUppercase{#1}}%
-}
-\newcommand{\messagehead}[1]{%
-  {\displayfont\bfseries\color{PitchNavy}%
-  \fontsize{13.2}{14.5}\selectfont #1\par}%
+\newcommand{\sectionhead}[1]{%
+  {\bfseries\color{ReportNavy}\fontsize{12.4}{13.8}\selectfont #1\par}%
   \vspace{1.5mm}%
-  {\color{PitchTeal}\rule{17mm}{1.15pt}}\par
-  \vspace{1.8mm}%
 }
-\newcommand{\sidehead}[1]{%
-  {\displayfont\bfseries\color{PitchNavy}%
-  \fontsize{12.4}{13.5}\selectfont #1\par}%
+\newcommand{\subhead}[1]{%
+  {\bfseries\color{ReportNavy}\fontsize{9.7}{10.8}\selectfont #1\par}%
 }
-\newcommand{\personlabel}[1]{%
-  {\displayfont\bfseries\color{PitchTeal!65!PitchNavy}%
-  \fontsize{8.2}{9.0}\selectfont\MakeUppercase{#1}}%
-}
-\newcommand{\softpanel}[1]{%
-  \begingroup
-  \setlength{\fboxsep}{3.8mm}%
-  \colorbox{PitchPale}{\parbox{\dimexpr\linewidth-2\fboxsep\relax}{#1}}%
-  \endgroup
+\newcommand{\metatext}[1]{%
+  {\bfseries\color{ReportMuted}\fontsize{7.5}{8.2}\selectfont\MakeUppercase{#1}}%
 }
 
 \begin{document}
-\color{PitchInk}
-\fontsize{9.6}{11.4}\selectfont
+\color{ReportInk}
+\fontsize{10.0}{12.1}\selectfont
 \raggedright
 
-% Institutional row
-\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.28\linewidth}>{\centering\arraybackslash}X>{\raggedleft\arraybackslash}p{0.20\linewidth}@{}}
-  \includegraphics[height=12.2mm]{../../assets/institutions/university-of-glasgow.png} &
-  \includegraphics[height=8.0mm]{../../assets/institutions/cuhk.png} &
-  \includegraphics[height=13.2mm]{../../assets/institutions/uestc.png}
+% Institutional marks are balanced by optical footprint.
+\begin{tabularx}{\linewidth}{@{}>{\centering\arraybackslash}X>{\centering\arraybackslash}X>{\centering\arraybackslash}X@{}}
+  \raisebox{-0.5\height}{\includegraphics[width=29mm]{../../assets/institutions/university-of-glasgow.png}} &
+  \raisebox{-0.5\height}{\includegraphics[width=44mm]{../../assets/institutions/cuhk.png}} &
+  \raisebox{-0.5\height}{\includegraphics[height=16mm]{../../assets/institutions/uestc.png}}
 \end{tabularx}
 
-\vspace{2.3mm}
-{\color{PitchRule}\rule{\linewidth}{0.55pt}}
-\vspace{2.2mm}
+\vspace{4.0mm}
+\metatext{BMEG3920 \enspace/\enspace One-page project pitch}
 
-\eyebrow{BMEG3920 \sepmark\ One-page pitch}
+\vspace{1.7mm}
+{\bfseries\color{ReportNavy}\fontsize{29}{30.5}\selectfont LiteRehab Fusion}\par
+\vspace{1.2mm}
+{\color{ReportMuted}\fontsize{11.5}{13.2}\selectfont
+Real-time feedback for upper-limb rehabilitation practice at home.}\par
 
-\vspace{1.5mm}
-{\displayfont\bfseries\color{PitchNavy}\fontsize{29}{30.5}\selectfont LiteRehab Fusion}\par
-\vspace{1.4mm}
-{\displayfont\color{PitchMuted}\fontsize{11.7}{13.2}\selectfont
-Immediate feedback for upper-limb rehabilitation practice at home.}\par
+\vspace{6.0mm}
+\sectionhead{Summary}
+LiteRehab Fusion is a coursework engineering prototype that combines a
+forearm-worn motion sensor with camera-based posture estimation. The system
+recognises the demonstrated exercise, counts repetitions, checks selected
+movement features, and records synchronized motion and posture data. It is
+designed to support home practice under professional guidance; it does not
+make treatment decisions or assess clinical recovery.
 
-\vspace{4.2mm}
-{\color{PitchTeal}\rule{\linewidth}{1.4pt}}
-\vspace{4.2mm}
+\vspace{6.0mm}
 
-% Asymmetric body grid
-\begin{minipage}[t]{0.625\linewidth}
-  \vspace{0pt}
-  \messagehead{Feedback arrives too late}
-  A patient may leave a physiotherapy appointment knowing what to practise.
-  At home, it is harder to tell whether the movement was controlled and large
-  enough, or whether leaning did part of the work. By the next appointment,
-  those repetitions are already behind them.
+\begin{minipage}[t]{0.477\linewidth}
+  \vspace{0pt}\raggedright
 
-  \vspace{5.5mm}
-  \messagehead{LiteRehab responds during the repetition}
-  LiteRehab gives a cue while the exercise is still happening. A forearm
-  wearable tracks motion, while a camera checks posture. Together, they
-  identify the demonstrated exercise, count repetitions, and flag excessive
-  speed, limited range, or trunk compensation. The dashboard also keeps a
-  synchronized session record.
+  \sectionhead{Background}
+  Home-exercise programmes ask patients to practise away from the clinic.
+  During these sessions, a patient may not notice that a movement is too fast,
+  that the range is limited, or that the trunk is compensating. The
+  physiotherapist usually reviews progress at a later appointment rather than
+  observing each repetition.
 
-  \vspace{6.2mm}
-  \messagehead{Motion and posture, seen together}
+  \vspace{5.2mm}
+  \sectionhead{Aim}
+  The project examines whether wearable motion sensing and a camera view of
+  posture can provide immediate, understandable feedback during a prescribed
+  upper-limb exercise. A synchronized session record is retained for possible
+  later review.
 
-  \begin{center}
-  \begin{tikzpicture}[
-    input/.style={
-      draw=PitchTeal!75!PitchNavy,
-      fill=white,
-      rounded corners=1mm,
-      line width=0.6pt,
-      minimum height=12.2mm,
-      text width=25mm,
-      align=center,
-      inner sep=1.8mm,
-      font=\displayfont\fontsize{8.2}{9.2}\selectfont
-    },
-    core/.style={
-      draw=PitchNavy,
-      fill=PitchPale,
-      rounded corners=1mm,
-      line width=0.75pt,
-      minimum height=15mm,
-      text width=29mm,
-      align=center,
-      inner sep=1.8mm,
-      font=\displayfont\bfseries\fontsize{8.4}{9.4}\selectfont
-    },
-    output/.style={
-      draw=PitchTeal!75!PitchNavy,
-      fill=white,
-      rounded corners=1mm,
-      line width=0.6pt,
-      minimum height=15mm,
-      text width=27mm,
-      align=center,
-      inner sep=1.8mm,
-      font=\displayfont\bfseries\fontsize{8.4}{9.4}\selectfont
-    },
-    flow/.style={
-      -{Latex[length=2.0mm,width=1.3mm]},
-      draw=PitchNavy!72,
-      line width=0.65pt
-    }
-  ]
-    \node[input] (motion) at (1.35,1.28) {\textbf{Wearable motion}\\[-0.2mm]{\color{PitchMuted}\fontsize{7.1}{7.8}\selectfont forearm IMU}};
-    \node[input] (posture) at (1.35,-1.28) {\textbf{Camera posture}\\[-0.2mm]{\color{PitchMuted}\fontsize{7.1}{7.8}\selectfont trunk position}};
-    \node[core] (analysis) at (5.05,0) {Synchronized\\analysis};
-    \node[output] (cue) at (8.72,0) {Immediate\\coaching cue};
+  \vspace{5.2mm}
+  \sectionhead{System design}
 
-    \draw[flow] (motion.east) -- (analysis.west);
-    \draw[flow] (posture.east) -- (analysis.west);
-    \draw[flow] (analysis.east) -- (cue.west);
-  \end{tikzpicture}
-  \end{center}
+  \subhead{Wearable unit}
+  \vspace{0.8mm}
+  An MPU6050 samples forearm motion at 50 Hz. An ESP32 wearable transmits the
+  samples over BLE to an ESP32-S3 receiver, which maintains the local exercise
+  state and repetition count.
 
-  \vspace{1.0mm}
-  \begingroup
-  \setlength{\fboxsep}{2.8mm}
-  \colorbox{PitchPale}{%
-    \parbox{\dimexpr\linewidth-2\fboxsep\relax}{%
-      \centering\displayfont\color{PitchNavy}\fontsize{8.6}{10.0}\selectfont
-      ``Slow down''\quad\sepmark\quad
-      ``Increase the range''\quad\sepmark\quad
-      ``Keep the trunk still''
-    }%
-  }
-  \endgroup
+  \vspace{3.5mm}
+  \subhead{Posture input}
+  \vspace{0.8mm}
+  A MaixCAM2 video stream supplies a wider view of the movement. Computer-based
+  posture estimation is used to check trunk position alongside the forearm
+  signal.
 
-  \vspace{2.7mm}
-  {\displayfont\color{PitchMuted}\fontsize{7.8}{9.0}\selectfont
-  Forearm wearable (MPU6050 + ESP32) \sepmark\ BLE receiver
-  \sepmark\ MaixCAM2 posture stream \sepmark\ computer dashboard}
+  \vspace{3.5mm}
+  \subhead{Analysis and interface}
+  \vspace{0.8mm}
+  The dashboard aligns the motion and posture streams, displays the current
+  status, and stores a synchronized session record. A classroom CNN-BiGRU
+  baseline is available with a rule-based fallback.
 
-  \vspace{7.2mm}
-  \messagehead{The wearable sees movement. The camera sees posture.}
-
-  \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X@{\hspace{6mm}}>{\raggedright\arraybackslash}X@{}}
-    {\color{PitchTeal}\rule{18mm}{0.9pt}}\par
-    \vspace{1.2mm}
-    \personlabel{Wearable motion}\par
-    \vspace{1.0mm}
-    Repetition timing and movement range from the forearm.
-    &
-    {\color{PitchTeal}\rule{18mm}{0.9pt}}\par
-    \vspace{1.2mm}
-    \personlabel{Camera posture}\par
-    \vspace{1.0mm}
-    A wider view that can flag trunk compensation.
-  \end{tabularx}
 \end{minipage}
 \hfill
-\begin{minipage}[t]{0.34\linewidth}
+\begin{minipage}[t]{0.477\linewidth}
   \vspace{0pt}\raggedright
-  \softpanel{%
-    \raggedright
-    \eyebrow{Working prototype}\par
-    \vspace{2.0mm}
-    \sidehead{What the prototype\\does today}
-    \vspace{2.2mm}
-    \begin{itemize}
-      \item Recognises the demonstrated elbow flexion and forearm rotation exercises.
-      \item Gives feedback for excessive speed, insufficient range, and trunk compensation.
-      \item Shows the repetition count and records synchronized motion and posture data.
-      \item Uses a classroom CNN-BiGRU baseline with a rule-based fallback.
-    \end{itemize}
-  }
 
-  \vspace{8.0mm}
-  \sidehead{A cue now, a record for later}
-  \vspace{2.2mm}
-  {\color{PitchTeal}\rule{17mm}{1.15pt}}\par
-  \vspace{2.8mm}
-  \personlabel{For the person practising}\par
-  \vspace{1.1mm}
-  A short cue arrives in time to adjust the next repetition.
+  \sectionhead{Prototype capabilities}
+  The current MVP demonstrates:
+  \begin{itemize}
+    \item elbow-flexion and forearm-rotation exercise recognition;
+    \item repetition counting from the wearable motion signal;
+    \item checks for excessive speed and insufficient movement range;
+    \item a posture check for trunk compensation;
+    \item local status feedback and synchronized IMU and pose logging.
+  \end{itemize}
 
-  \vspace{4.2mm}
-  \personlabel{For the physiotherapist}\par
-  \vspace{1.1mm}
-  A session record could show what happened between appointments. Exercise
-  selection and clinical decisions remain with the physiotherapist.
+  \vspace{5.0mm}
+  \sectionhead{Intended use}
 
-  \vspace{8.0mm}
-  {\color{PitchTeal}\rule{\linewidth}{1.4pt}}\par
-  \vspace{2.6mm}
-  \sidehead{Next: supervised usability\\testing}
-  \vspace{2.2mm}
-  Our next step is to test the workflow with physiotherapists and representative
-  users. Their feedback would help us refine the prompts and collect movement
-  data under professional supervision.
+  \subhead{During home practice}
+  \vspace{0.8mm}
+  The person receives feedback while performing the exercise, leaving time to
+  adjust a later repetition in the same session.
+
+  \vspace{3.5mm}
+  \subhead{Between appointments}
+  \vspace{0.8mm}
+  A physiotherapist could review the session record when discussing home
+  practice. Exercise selection and all clinical decisions remain with the
+  physiotherapist.
+
+  \vspace{5.2mm}
+  \sectionhead{Limitations and next steps}
+  The exercise set is limited, and the classroom model was trained on a small
+  public dataset. The prototype has not been clinically validated and makes no
+  claim about diagnostic accuracy or patient outcomes.
+
+  \vspace{2.3mm}
+  The next step is supervised usability testing with physiotherapists and
+  representative users. This work would examine the clarity and timing of the
+  feedback and guide the collection of more representative movement data.
+
 \end{minipage}
 
-\vspace{3.5mm}
-{\color{PitchRule}\rule{\linewidth}{0.65pt}}\par
-\vspace{1.8mm}
-\eyebrow{Coursework prototype \sepmark\ Not a medical device}\par
-\vspace{1.4mm}
-{\color{PitchMuted}\fontsize{9.0}{10.2}\selectfont
+\vspace{6.0mm}
+{\color{ReportRule}\rule{\linewidth}{0.45pt}}\par
+\vspace{2.0mm}
+\metatext{Coursework engineering prototype \enspace/\enspace Not a medical device}\par
+\vspace{1.1mm}
+{\color{ReportMuted}\fontsize{8.5}{10.0}\selectfont
 LiteRehab Fusion does not diagnose, prescribe treatment, score recovery, or
-replace professional supervision. The current system supports a limited
-exercise set and makes no clinical accuracy claim.}
+replace professional supervision.}
 
 \end{document}

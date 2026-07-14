@@ -1,39 +1,52 @@
 # LiteRehab Fusion
 
-*Immediate feedback for upper-limb rehabilitation practice at home.*
+*Real-time feedback for upper-limb rehabilitation practice at home.*
 
-## Feedback arrives too late
+## Summary
 
-A patient may leave a physiotherapy appointment knowing what to practise. At home, it is harder to tell whether the movement was controlled and large enough, or whether leaning did part of the work. By the next appointment, those repetitions are already behind them.
+LiteRehab Fusion is a coursework engineering prototype that combines a forearm-worn motion sensor with camera-based posture estimation. The system recognises the demonstrated exercise, counts repetitions, checks selected movement features, and records synchronized motion and posture data. It is designed to support home practice under professional guidance; it does not make treatment decisions or assess clinical recovery.
 
-## LiteRehab responds during the repetition
+## Background
 
-LiteRehab gives a cue while the exercise is still happening. A forearm wearable tracks motion, while a camera checks posture. Together, they identify the demonstrated exercise, count repetitions, and flag excessive speed, limited range, or trunk compensation. The dashboard also keeps a synchronized session record.
+Home-exercise programmes ask patients to practise away from the clinic. During these sessions, a patient may not notice that a movement is too fast, that the range is limited, or that the trunk is compensating. The physiotherapist usually reviews progress at a later appointment rather than observing each repetition.
 
-## Motion and posture, seen together
+## Aim
 
-Wearable motion sensing + Camera posture tracking -> Synchronized analysis -> Immediate coaching cue
+The project examines whether wearable motion sensing and a camera view of posture can provide immediate, understandable feedback during a prescribed upper-limb exercise. A synchronized session record is retained for possible later review.
 
-## What the prototype does today
+## System design
 
-- Recognises the demonstrated elbow-flexion and forearm-rotation exercises.
-- Gives feedback for excessive speed, insufficient range, and trunk compensation.
-- Shows the repetition count on the wearable and records synchronized motion and posture data.
-- Uses a classroom CNN-BiGRU baseline with a rule-based fallback.
+**Wearable unit:** An MPU6050 samples forearm motion at 50 Hz. An ESP32 wearable transmits the samples over BLE to an ESP32-S3 receiver, which maintains the local exercise state and repetition count.
 
-## A cue now, a record for later
+**Posture input:** A MaixCAM2 video stream supplies a wider view of the movement. Computer-based posture estimation is used to check trunk position alongside the forearm signal.
 
-**For the person practising:** A short cue arrives in time to adjust the next repetition.
+**Analysis and interface:** The dashboard aligns the motion and posture streams, displays the current status, and stores a synchronized session record. A classroom CNN-BiGRU baseline is available with a rule-based fallback.
 
-**For the physiotherapist:** A session record could show what happened between appointments. Exercise selection and clinical decisions remain with the physiotherapist.
+## Prototype capabilities
 
-## Next: supervised usability testing
+The current MVP demonstrates:
 
-Our next step is to test the workflow with physiotherapists and representative users. Their feedback would help us refine the prompts and collect movement data under professional supervision.
+- elbow-flexion and forearm-rotation exercise recognition;
+- repetition counting from the wearable motion signal;
+- checks for excessive speed and insufficient movement range;
+- a posture check for trunk compensation;
+- local status feedback and synchronized IMU and pose logging.
+
+## Intended use
+
+**During home practice:** The person receives feedback while performing the exercise, leaving time to adjust a later repetition in the same session.
+
+**Between appointments:** A physiotherapist could review the session record when discussing home practice. Exercise selection and all clinical decisions remain with the physiotherapist.
+
+## Limitations and next steps
+
+The exercise set is limited, and the classroom model was trained on a small public dataset. The prototype has not been clinically validated and makes no claim about diagnostic accuracy or patient outcomes.
+
+The next step is supervised usability testing with physiotherapists and representative users. This work would examine the clarity and timing of the feedback and guide the collection of more representative movement data.
 
 ## Scope
 
-LiteRehab Fusion is a coursework engineering prototype, not a medical device. It does not diagnose, prescribe treatment, score recovery, or replace professional supervision. The current system supports a limited exercise set and makes no clinical accuracy claim.
+LiteRehab Fusion is a coursework engineering prototype, not a medical device. It does not diagnose, prescribe treatment, score recovery, or replace professional supervision.
 
 ## Claim audit
 
@@ -49,14 +62,15 @@ LiteRehab Fusion is a coursework engineering prototype, not a medical device. It
 
 ### Draft rewrite
 
-The working draft used three consecutive rhetorical questions in the problem statement and repeated the same subject-verb pattern across several sections. It also described the product as giving "simple" feedback without explaining what made the feedback simple.
+The earlier version used message-led headings, a diagram with promotional cue labels, and repeated contrasts between immediate feedback and later review. Those choices made the page read like a generated product infographic.
 
 ### What makes the below so obviously AI generated?
 
-- The opening was arranged as an overly tidy sequence of three questions.
-- Several sentences stacked three benefits or actions in the same rhythm.
-- The first user-value heading described an audience category instead of saying what each person receives.
+- Slogan-like headings tried to do the work of the argument.
+- The three quoted prompts looked invented because the interface wording was not being documented.
+- Repeated short labels and coloured nodes made a small prototype look more polished than the evidence supports.
+- Several sentences grouped benefits into overly tidy sets of three.
 
 ### Final rewrite
 
-The final copy turns the three opening questions into one concrete sentence about control, range, and leaning. It uses shorter sentences where the user story needs emphasis, names the actual prompts and limits, and keeps conditional language for the proposed physiotherapist workflow. Promotional adjectives, vague authority, em dashes, engineering test totals, and unsupported clinical implications have been removed.
+The final copy uses conventional report headings and describes the system in plain technical language. It separates demonstrated capability from intended use, keeps conditional wording for later physiotherapist review, and states the limits directly. The flow diagram and invented prompt strip have been removed. The remaining claims are bounded by the current repository and demo workflow.

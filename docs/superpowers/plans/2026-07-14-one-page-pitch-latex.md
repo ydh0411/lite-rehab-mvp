@@ -2,21 +2,22 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Redesign the LiteRehab Fusion one-page pitch as a polished A4 academic product brief with three institutional marks, natural English copy, a compact converging system flow, and no conspicuous unused space.
+**Goal:** Redesign the LiteRehab Fusion one-page pitch as a restrained A4 technical report with balanced institutional marks and natural, claim-bounded English copy.
 
-**Architecture:** Keep claim-bounded copy and its audit in Markdown, store the three original course-slide logos as local assets, and typeset both through one editable LaTeX source. Use an asymmetric two-column grid, a Times-like body face, a Helvetica-like display face, and a flat TikZ flow. Compile and inspect the PDF mechanically and visually after every meaningful layout change.
+**Architecture:** Keep claim-bounded copy and its audit in Markdown and typeset the original course-slide logos and copy through one editable LaTeX source. Use a full-width summary followed by a regular two-column report body, one Helvetica-like family throughout, and a muted navy/charcoal/grey palette. Compile and inspect the PDF mechanically and visually after every meaningful layout change.
 
-**Tech Stack:** Markdown; pdfLaTeX; `newtxtext`, `helvet`, `geometry`, `microtype`, `graphicx`, `xcolor`, `tabularx`, `enumitem`, and TikZ; Poppler `pdfinfo`, `pdffonts`, `pdftotext`, and `pdftoppm`; original PNG assets embedded in `Day 3 Slide Deck.pptx`.
+**Tech Stack:** Markdown; pdfLaTeX; `helvet`, `geometry`, `microtype`, `graphicx`, `xcolor`, `tabularx`, and `enumitem`; Poppler `pdfinfo`, `pdffonts`, `pdftotext`, and `pdftoppm`; original PNG assets embedded in `Day 3 Slide Deck.pptx`.
 
 ## Global constraints
 
 - Produce exactly one A4 portrait page.
-- Use the academic product-brief design approved as option B, not a literal ICML or CVPR poster template.
-- Use `newtxtext` for body copy and Helvetica (`helvet`, scaled to 0.94) for the title, message headings, labels, and flow nodes.
+- Use a restrained one-page technical-report design informed by the typographic discipline of ICML, CVPR, and AAAI materials, without copying a specific template.
+- Use Nimbus Sans through the Helvetica-compatible `helvet` package throughout.
 - Keep body copy at or above 9 pt and preserve a clear top-to-bottom reading order.
 - Place the original University of Glasgow, CUHK, and UESTC marks in a slim, optically balanced institutional row.
-- Use Glasgow navy as the primary accent and restrained cyan/teal as the secondary accent.
-- Use message-led headings instead of generic labels such as "The gap", "Our response", "How it works", and "Who benefits".
+- Use muted institutional navy as the only accent; do not use bright cyan or teal.
+- Use conventional report headings: `Summary`, `Background`, `Aim`, `System design`, `Prototype capabilities`, `Intended use`, and `Limitations and next steps`.
+- Remove decorative heading lines, the system flow diagram, and the example-prompt strip.
 - Do not include test counts, build targets, smoke-test results, or other software-development validation in the visible pitch.
 - State that LiteRehab Fusion is an engineering prototype, not a medical device, and make no clinical-effectiveness claim.
 - Preserve the user's modified source files and unrelated untracked course documents; stage only pitch deliverables.
@@ -88,17 +89,17 @@ Use this wording as the working draft:
 
 *Immediate feedback for upper-limb rehabilitation practice at home.*
 
-## Feedback arrives too late
+## Background
 
 A patient may know which exercises to practise after a physiotherapy appointment, but still be unsure about the next repetition at home. Was the movement controlled? Was the range large enough? Did the trunk compensate? By the next appointment, that practice has already happened.
 
-## LiteRehab responds during the repetition
+## Aim
 
 The prototype combines a forearm wearable with camera-based posture tracking. It identifies the demonstrated exercise, counts repetitions, and gives a short cue when the movement is too fast, too small, or assisted by trunk movement. The session is recorded for later review.
 
-## Motion and posture, seen together
+## System design
 
-Wearable motion sensing + Camera posture tracking -> Synchronized analysis -> Immediate coaching cue
+Wearable sensing + Camera posture -> Time-aligned fusion -> Live feedback + Session record
 
 ## What the prototype does today
 
@@ -107,13 +108,13 @@ Wearable motion sensing + Camera posture tracking -> Synchronized analysis -> Im
 - Shows the repetition count on the wearable and records synchronized motion and posture data.
 - Uses a classroom CNN-BiGRU baseline with a rule-based fallback.
 
-## Built for both sides of rehabilitation
+## Intended use
 
 **For the patient:** A clear cue arrives while the repetition can still be corrected.
 
 **For the physiotherapist:** A session record could show what happened between appointments. Exercise selection and clinical decisions remain with the physiotherapist.
 
-## Next: supervised usability testing
+## Limitations and next steps
 
 The next step is to test the workflow with physiotherapists and representative users, then refine the feedback and collect movement data under professional supervision.
 
@@ -164,50 +165,48 @@ Use this preamble and hierarchy:
 ```latex
 \documentclass[10pt,a4paper]{article}
 \usepackage[T1]{fontenc}
-\usepackage{newtxtext}
-\usepackage[scaled=0.94]{helvet}
+\usepackage[scaled=0.96]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
 \usepackage[protrusion=true,expansion=true]{microtype}
 \usepackage[left=14mm,right=14mm,top=10mm,bottom=10mm]{geometry}
 \usepackage{graphicx,xcolor,tabularx,enumitem,tikz}
 \usetikzlibrary{arrows.meta,positioning,calc}
 
-\definecolor{PitchNavy}{HTML}{071B58}
-\definecolor{PitchTeal}{HTML}{35BFC8}
-\definecolor{PitchInk}{HTML}{182234}
-\definecolor{PitchMuted}{HTML}{5B6470}
-\definecolor{PitchPale}{HTML}{EEF6F7}
-\definecolor{PitchRule}{HTML}{D7DEE5}
+\definecolor{PitchNavy}{HTML}{16324F}
+\definecolor{PitchInk}{HTML}{20252B}
+\definecolor{PitchMuted}{HTML}{626B73}
+\definecolor{PitchPale}{HTML}{F3F5F6}
+\definecolor{PitchRule}{HTML}{D9DEE2}
 
-\newcommand{\displayfont}{\fontfamily{phv}\selectfont}
-\newcommand{\messagehead}[1]{{\displayfont\bfseries\color{PitchNavy}\fontsize{13.2}{14.5}\selectfont #1\par}}
-\newcommand{\eyebrow}[1]{{\displayfont\bfseries\color{PitchTeal!70!PitchNavy}\fontsize{7.8}{8.5}\selectfont\MakeUppercase{#1}}}
+\newcommand{\sectionhead}[1]{{\bfseries\color{PitchNavy}\fontsize{12.6}{13.8}\selectfont #1\par}}
+\newcommand{\metatext}[1]{{\bfseries\color{PitchMuted}\fontsize{7.6}{8.3}\selectfont\MakeUppercase{#1}}}
 ```
 
 Remove `lmodern`, the navy full-width title box, generic `\sectiontitle`, repeated vertical rules, and the bottom `\vfill`.
 
 - [ ] **Step 2: Build the institutional and title area**
 
-Create a `tabularx` row with the Glasgow wordmark on the left, CUHK wordmark centred, and UESTC seal on the right. Set optical heights rather than equal widths: approximately `11.5mm`, `8.0mm`, and `13.0mm`. Place `BMEG3920 · ONE-PAGE PITCH` beneath a thin rule, followed by a 27-29 pt Helvetica title and the humanized tagline. Keep the header white and use navy text instead of a heavy colour block.
+Create a centred `tabularx` row with the Glasgow wordmark on the left, CUHK wordmark centred, and UESTC seal on the right. Size by optical footprint: approximately `25mm` wide, `42mm` wide, and `18mm` high. Place `BMEG3920 · ONE-PAGE PITCH` below the marks, followed by a 27-29 pt Helvetica-compatible title and the humanized tagline. Keep the header white and use navy text without a coloured banner or decorative underline.
 
 - [ ] **Step 3: Build the asymmetric two-column body**
 
-Use a `0.625\linewidth` main column and `0.335\linewidth` side column separated by whitespace. The main column contains:
+Use two columns separated by whitespace. The wider main column contains:
 
-1. `Feedback arrives too late` with the complete problem paragraph.
-2. `LiteRehab responds during the repetition` with the complete response paragraph.
-3. `Motion and posture, seen together` followed by the TikZ flow.
+1. `Background` with the complete problem paragraph.
+2. `Aim` with the concise project objective.
+3. `System design` with short prose subsections for the wearable unit, posture input, and analysis interface.
 
 The side column contains:
 
 1. a pale capability panel headed `What the prototype does today`;
-2. a user-value block headed `Built for both sides of rehabilitation`;
-3. a teal-accented next-step block headed `Next: supervised usability testing`.
+2. a user-value block headed `Intended use`;
+3. a restrained block headed `Limitations and next steps`.
 
 Use 9.35 pt body text with 11.1 pt leading and compact bullets. Do not solve overflow by reducing body text below 9 pt.
 
-- [ ] **Step 4: Draw the converging flow**
+- [ ] **Step 4: Typeset the system design as report prose**
 
-Use two small input nodes on the left (`Wearable motion` and `Camera posture`), thin arrows converging into `Synchronized analysis`, and one arrow to `Immediate coaching cue`. Use flat white or pale fills, 0.55 pt rules, modest 1 mm corner radii, and Helvetica node labels. Keep device names such as MPU6050 and MaixCAM2 in small supporting text, not in the primary reading line.
+Use `Wearable unit`, `Posture input`, and `Analysis and interface` as short bold subheadings. Describe the hardware and software path in complete sentences. Do not add a flow diagram, nodes, connectors, icons, or a separate strip of example feedback prompts.
 
 - [ ] **Step 5: Add the limitation footer**
 
@@ -273,7 +272,7 @@ Run:
 ```bash
 mkdir -p tmp/pdfs
 pdftotext output/pdf/literehab_one_page_pitch.pdf tmp/pdfs/literehab_pitch.txt
-rg "LiteRehab Fusion|Feedback arrives too late|Motion and posture, seen together|not a medical device|supervised usability testing" tmp/pdfs/literehab_pitch.txt
+rg "LiteRehab Fusion|Background|System design|not a medical device|supervised usability testing" tmp/pdfs/literehab_pitch.txt
 ! rg -i "70 Python|host tests|smoke test|builds for" tmp/pdfs/literehab_pitch.txt
 ```
 
@@ -289,7 +288,7 @@ pdftoppm -png -r 180 -f 1 -singlefile \
   output/pdf/literehab_one_page_pitch.pdf tmp/pdfs/literehab_pitch
 ```
 
-Inspect the PNG and confirm: all three logos are sharp and optically balanced; the title is dominant; the body reads main column then side column; the flow arrows converge correctly; no text or logo is clipped; no node collides; the lower part of the page is intentionally occupied; and whitespace separates ideas without leaving an empty lower third.
+Inspect the PNG and confirm: all three logos are sharp and optically balanced; the title is dominant; the summary and two-column body have a clear reading order; no text or logo is clipped; the lower part of the page is intentionally occupied; and whitespace separates ideas without leaving an empty lower third.
 
 - [ ] **Step 5: Re-run after any visual correction**
 
