@@ -161,7 +161,37 @@ def test_renderer_handles_empty_history_and_missing_rom():
     assert canvas.shape == (720, 1280, 3)
 
 
-def test_renderer_does_not_treat_not_connected_camera_as_healthy():
+def test_polished_composition_uses_rounded_camera_and_right_rail():
+    frame = np.full((600, 800, 3), 90, dtype=np.uint8)
+
+    canvas = render_dashboard(
+        frame,
+        [sample(), sample(-10, 5, 40)],
+        base_state(),
+    )
+
+    assert tuple(canvas[80, 20]) == COLORS["background"]
+    assert tuple(canvas[79, 60]) == COLORS["border"]
+    assert tuple(canvas[100, 860]) == COLORS["surface"]
+    assert np.any(
+        canvas[470:650, 850:1250] != np.asarray(COLORS["surface"])
+    )
+
+
+def test_feedback_banner_uses_accent_strip_not_solid_danger_fill():
+    frame = np.full((600, 800, 3), 90, dtype=np.uint8)
+
+    canvas = render_dashboard(
+        frame,
+        [],
+        base_state(feedback="Avoid trunk compensation"),
+    )
+
+    assert tuple(canvas[632, 48]) == COLORS["danger"]
+    assert tuple(canvas[632, 100]) != COLORS["danger"]
+
+
+def test_camera_failure_keeps_designed_empty_state():
     frame = np.full((600, 800, 3), 255, dtype=np.uint8)
 
     canvas = render_dashboard(
@@ -171,3 +201,6 @@ def test_renderer_does_not_treat_not_connected_camera_as_healthy():
     )
 
     assert tuple(canvas[300, 400]) == COLORS["surface"]
+    assert np.any(
+        canvas[330:360, 250:600] != np.asarray(COLORS["surface"])
+    )
