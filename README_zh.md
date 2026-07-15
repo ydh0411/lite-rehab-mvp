@@ -1,6 +1,6 @@
 <div align="center">
   <h1>LiteRehab Fusion</h1>
-  <p>佩戴式 IMU 感知、独立 MaixCAM2 视觉与实时康复反馈。</p>
+  <p>佩戴式 IMU 感知、独立 MaixCAM2 视觉与上肢康复实时反馈。</p>
   <p>
     <img src="https://img.shields.io/badge/ESP--IDF-6.0.2-E7352C?logo=espressif" alt="ESP-IDF 6.0.2">
     <img src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white" alt="Python 3.12">
@@ -10,141 +10,457 @@
   <p><a href="README.md">English</a> · <a href="README_zh.md">中文</a></p>
 </div>
 
-LiteRehab Fusion 是一个用于上肢康复演示的双开发板课程与工程原型。MYOSA ESP32 佩戴端通过 BLE 将 IMU 运动数据发送到 ESP32-S3 接收端，同时独立 MaixCAM2 向电脑端 Dashboard 提供视频，实现同步反馈与记录。
+LiteRehab Fusion 是一个面向 BMEG3920 课程与工程演示的上肢康复原型。MYOSA ESP32 佩戴端对前臂运动进行规则分类，并通过 BLE 发送 50 Hz 的 MPU6050 数据；ESP32-S3 接收端负责校验、声光反馈与 USB 串口转发。独立 MaixCAM2 向电脑端 Python Dashboard 提供视频，MediaPipe 姿态特征、可选神经网络推理、反馈融合、界面显示和同步 CSV 记录均在电脑上运行。
 
-**LiteRehab Fusion 不是医疗器械，也不能替代理疗师。**
+**LiteRehab Fusion 不是医疗器械，不用于诊断、治疗处方、康复评分，也不能替代专业人员监督。**
 
-## 当前系统状态
+## 目录
+
+- [系统概览](#系统概览)
+- [架构与数据流](#架构与数据流)
+- [可运行项目](#可运行项目)
+- [快速开始](#快速开始)
+- [操作与输出](#操作与输出)
+- [仓库结构](#仓库结构)
+- [Python 项目完整说明](#python-项目完整说明)
+- [C 项目完整说明](#c-项目完整说明)
+- [构建与验证](#构建与验证)
+- [故障排查](#故障排查)
+- [文档与安全边界](#文档与安全边界)
+
+## 系统概览
 
 | 组件 | 当前实现 | 状态 |
 |---|---|---|
-| 佩戴式感知 | MYOSA ESP32 + MPU6050，采样率 50 Hz | 可用 |
-| 无线链路 | BLE 佩戴端 → ESP32-S3 接收端 | 可用 |
-| 物理反馈 | 独立 LED + 无源蜂鸣器 | 可用 |
-| 独立摄像头 | MaixCAM2 RTSP over USB NCM | 可用 |
-| 视觉 | 电脑端 MediaPipe 姿态识别 | 可用 |
-| IMU 模型 | 自动加载 CNN-BiGRU checkpoint | 可用 |
-| 记录 | 同步记录 IMU/姿态 CSV，并提供可选预测与标签字段 | 可用 |
+| 佩戴式感知 | MYOSA ESP32 + MPU6050，每 20 ms 采样一次（50 Hz） | 已实现 |
+| 端侧动作逻辑 | 滤波、自适应阈值、两类动作、重复计数与质量判断 | 已实现 |
+| 无线链路 | 带版本号和 CRC-16 的 26 字节 BLE 通知包 | 已实现 |
+| 接收网关 | ESP32-S3 BLE Central 转 USB 串口遥测 | 已实现 |
+| 物理反馈 | 连接 LED 与无源蜂鸣器成功/警告音 | 已实现 |
+| 独立摄像头 | 默认 MaixCAM2 RTSP over USB NCM，可选 UVC | 已实现 |
+| 电脑端视觉 | MediaPipe 姿态关键点以及关节/躯干特征 | 已实现 |
+| IMU 模型 | 自动加载 CNN-BiGRU checkpoint | 已实现 |
+| 多模态模型 | 双分支 CNN-BiGRU 代码与训练流程 | 可选；无默认融合 checkpoint |
+| Dashboard 与记录 | 1280×720 OpenCV 界面和同步 IMU/姿态 CSV | 已实现 |
 
-## 系统工作方式
+固件直接识别 `forearm_rotation` 和 `elbow_flexion`。随仓库提供的 IMU checkpoint 还包含 `shoulder_abduction`，但它不是第三个固件重复动作状态。当前模型和数据仅用于课堂基线演示，不能视为临床验证证据。
+
+## 架构与数据流
 
 ```mermaid
 flowchart LR
-    W["MYOSA ESP32<br/>MPU6050"] -->|BLE| R["ESP32-S3 接收端<br/>LED + 蜂鸣器"]
-    R -->|USB 串口| D["Python Dashboard"]
-    C["MaixCAM2"] -->|RTSP over USB NCM| D
-    D --> P["MediaPipe 姿态识别"]
-    D --> M["IMU CNN-BiGRU"]
-    P --> F["规则/模型融合<br/>反馈 + 同步 CSV"]
-    M --> F
+    MPU["MPU6050<br/>50 Hz IMU"] --> WEAR["MYOSA ESP32 佩戴端<br/>滤波 + 动作状态机"]
+    WEAR -->|"BLE：26 字节数据包"| RECV["ESP32-S3 接收端<br/>CRC + LED + 蜂鸣器"]
+    RECV -->|"USB 串口 CSV 文本"| DASH["Python Dashboard"]
+    CAM["MaixCAM2"] -->|"RTSP over USB NCM<br/>或可选 UVC"| DASH
+    DASH --> POSE["MediaPipe 姿态<br/>角度 + ROM + 躯干运动"]
+    DASH --> MODEL["IMU CNN-BiGRU<br/>可选多模态模型"]
+    POSE --> FUSE["规则/模型决策<br/>实时反馈"]
+    MODEL --> FUSE
+    DASH --> LOG["同步会话 CSV"]
 ```
 
-独立摄像头只替换视频输入；MediaPipe、CNN-BiGRU、融合与记录仍运行在电脑端。
+MaixCAM2 只负责替换视频输入。姿态估计、IMU 推理、多模态推理、规则/模型决策、Dashboard 渲染和 CSV 记录全部保留在电脑端。
 
-## 硬件与接线
+### 运行时流程
 
-| 数量 | 元件 | 用途 |
-|---:|---|---|
-| 1 | MYOSA ESP32 WROOM-32E | 佩戴端 BLE 控制器 |
-| 1 | MPU6050 | 50 Hz 手臂运动感知 |
-| 1 | SSD1306 128×64 OLED | 佩戴端状态与重复次数显示 |
-| 1 | ESP32-S3-DevKitC-1 N16R8 | BLE 接收和 USB 串口网关 |
-| 各 1 | LED、220–330 Ω 电阻、无源蜂鸣器 | 独立物理反馈 |
-| 1 | MaixCAM2 | 独立 RTSP 视频源 |
-| 2 | 四芯 JST 线 | 佩戴端 I²C 级联 |
-| 2–3 | USB 数据线 | 供电、烧录、串口和摄像头网络 |
+1. 佩戴端初始化 I²C，查找 MPU6050/OLED，并在静止状态下校准陀螺仪零偏。
+2. 每 20 ms 读取一次六轴数据，更新动作状态机，生成带 CRC 的数据包并通知 BLE 接收端。
+3. 接收端校验数据包、报告序号丢失、每次完成动作只生成一个物理反馈事件，并输出归一化串口遥测。
+4. Dashboard 使用电脑单调时钟分别记录串口数据到达时间和摄像头帧时间。
+5. 当关键点可见时，MediaPipe 提取选定左右侧的肩、肘、腕、髋特征。
+6. 同步器在 50 ms 容差内为每条 IMU 数据匹配最近的姿态数据；视觉缺失会被明确保留。
+7. 固件警告拥有更高优先级。只有配置了多模态模型且置信度达到阈值时，模型才可替换普通规则输出。
+8. 界面显示当前状态，同时所有已排出的 IMU 数据都会写入会话 CSV。
 
-```text
-穿戴端：MYOSA I²C ── MPU6050 ── SSD1306 OLED
-接收端：GPIO2 ── 电阻 ── LED ── GND；GPIO18 ── 电阻 ── 无源蜂鸣器 ── GND
-电脑端：ESP32-S3 原生 USB 与 MaixCAM2 Type-C 分别使用独立 USB 数据线
-```
+## 可运行项目
 
-将 MPU6050 牢固固定在前臂背侧，X 轴指向手部，Z 轴朝向皮肤外侧。上电前请阅读[完整接线指南](WIRING_GUIDE.md)。
+仓库包含 5 个彼此清晰的可运行或可构建单元：
+
+| 项目 | 语言/运行时 | 目标平台 | 主入口 | 作用 |
+|---|---|---|---|---|
+| 佩戴端固件 | C / ESP-IDF | MYOSA ESP32 | `wearable/main/app_main.c` | 读取 MPU6050、识别动作、计数、更新 OLED、发送 BLE 包 |
+| 接收端固件 | C / ESP-IDF | ESP32-S3-DevKitC-1 | `receiver/main/app_main.c` | 接收并校验 BLE 包、控制 LED/蜂鸣器、转发 USB 串口遥测 |
+| 共享算法 | 可移植 C17 | 主机测试 + 两个固件项目 | `shared/*.c` | 定义数据包协议、动作状态机和单次反馈逻辑 |
+| 电脑端应用 | Python 3.12 | macOS/Linux/Windows | `python/run_dashboard.py` | 读取串口/视频、姿态估计、模型推理、反馈融合、界面和 CSV |
+| 摄像头应用 | MaixPy | MaixCAM2 | `maixcam2/main.py` | 将内置摄像头发布为 RTSP 或可选 USB UVC |
 
 ## 快速开始
 
-### 1. 烧录 ESP32 开发板
+除非特别说明，以下命令均从仓库根目录运行。
+
+### 1. 硬件与接线
+
+| 数量 | 元件 | 作用 |
+|---:|---|---|
+| 1 | MYOSA ESP32 WROOM-32E | 佩戴端控制器与 BLE Peripheral |
+| 1 | MPU6050 | 六轴前臂运动感知 |
+| 1 | SSD1306 128×64 OLED | 显示动作、次数、质量和 BLE 状态 |
+| 1 | ESP32-S3-DevKitC-1 N16R8 | BLE Central 与原生 USB 串口网关 |
+| 各 1 | LED、220–330 Ω 电阻、无源蜂鸣器 | 接收端连接和动作反馈 |
+| 1 | MaixCAM2 | 独立 RTSP/UVC 视频源 |
+| 2–3 | 支持数据传输的 USB 线 | 供电、烧录、串口和摄像头网络 |
+
+```text
+佩戴端 I²C：MYOSA 主板 -> MPU6050 -> SSD1306 OLED
+接收端 LED：GPIO2 -> 220–330 Ω -> LED -> GND
+接收端蜂鸣器：GPIO18 -> 100–330 Ω -> 无源蜂鸣器 -> GND
+电脑端：ESP32-S3 原生 USB 与 MaixCAM2 Type-C 使用独立数据线
+```
+
+接线前先断电。接收端使用原生 USB Serial/JTAG，因此 GPIO19/20 必须保持空闲。上电前请阅读[完整接线指南](WIRING_GUIDE.md)。
+
+### 2. 构建与烧录 ESP32 项目
+
+辅助脚本使用本机 `~/.espressif/v6.0.2/esp-idf` 中的 ESP-IDF 6.0.2。
 
 ```bash
 source ~/.espressif/v6.0.2/esp-idf/export.sh
+./scripts/build_all.sh
+
 ./scripts/flash_wearable.sh /dev/cu.usbserial-WEARABLE
 ./scripts/flash_receiver.sh /dev/cu.usbmodem-RECEIVER
 ```
 
-### 2. 安装电脑端环境
+将示例端口替换为实际设备路径。如果 ESP32-S3 原生 USB 不稳定，可在命令前设置 `BAUD=115200`。
+
+### 3. 创建电脑端 Python 环境
+
+推荐 Python 3.12，因为当前依赖文件只在 Python 3.13 以下安装 MediaPipe。
 
 ```bash
 conda create -n literehab python=3.12 -y
 conda activate literehab
-pip install -r python/requirements.txt
+python -m pip install -r python/requirements.txt
 ```
 
-### 3. 启动 MaixCAM2 RTSP
+核心依赖包括 NumPy、OpenCV、pyserial、MediaPipe、PyTorch 和 pytest。
 
-使用 USB 数据线将 MaixCAM2 连接到电脑，在 MaixVision 中打开 [maixcam2/main.py](maixcam2/main.py)，保持已提交的 `MODE = "rtsp"` 设置并运行。USB NCM 是当前默认网络路径。
+### 4. 启动 MaixCAM2 视频源
 
-### 4. 启动 Dashboard
+使用支持数据传输的 Type-C 线连接 MaixCAM2。在 MaixVision 中打开 `maixcam2/main.py`，运行仓库默认设置：
 
-```bash
-PYTHON=python ./scripts/start_maixcam2_demo.sh rtsp://10.203.102.1:8554/live
+```python
+MODE = "rtsp"
 ```
 
-如果 USB NCM 地址不同，请从 MaixVision 终端读取准确的 RTSP URL，并传给同一命令。画面叠加信息应显示串口和摄像头均已连接；当右肩、右肘、右手腕和右髋可见时，系统将进入 Fusion 模式。
-
-### 可选 UVC 模式
-
-需要使用本地摄像头设备时，仍可选择 UVC。将 MaixCAM2 切换到 UVC 输出，使用 `PYTHONPATH=python python scripts/probe_cameras.py` 确认本地摄像头编号，再将该编号传给 `PYTHON=python ./scripts/start_maixcam2_demo.sh`。
-
-## 演示检查表
-
-将 MaixCAM2 横向放置在与参与者胸口接近的高度，距离约 1.5–2.0 m。
-
-1. 身体直立、右臂自然下垂；点击 Dashboard 窗口使其获得焦点，然后按小写 `b` 设置躯干基线。
-2. 用 2–3 秒缓慢完成一次肘部屈伸并回到中立位。
-3. 肘部保持约 90°，固定上臂并旋转前臂。
-4. 演示 `too_fast`、`insufficient_range` 和视觉 `trunk_compensation` 反馈。
-5. 短暂遮挡摄像头，确认 Dashboard 回退到 IMU-only 模式，并在姿态跟踪恢复后返回 Fusion。
-6. 按 `r` 重置重复动作的活动范围，或按 `q`/`Esc` 退出并关闭 CSV 文件。
-
-默认会话文件为 `python/sessions/maixcam2_demo.csv`。
-
-## 模型与数据
-
-Dashboard 默认加载 `python/models/imu_cnnbigru.pt`。该 checkpoint 是一个课堂基线模型，使用 [Wearable sensors-based human activity recognition dataset](https://doi.org/10.17632/s86tdtmcc2.1) 中公开小规模上肢 IMU 子集的 100 采样点窗口训练，因此无需用户自行录制训练动作。
-
-CNN-BiGRU 推理运行在电脑端。静止状态由 ESP32 规则门控，固件规则仍是动作识别和反馈的回退路径。本原型不作临床准确性声明。
-
-## 验证
-
-运行完整项目检查：
-
-```bash
-./scripts/test_all.sh
-```
-
-经验证的完整检查包含 70 项 Python 测试、3 项 C 主机测试、Dashboard 模型加载冒烟测试、佩戴端 ESP-IDF 构建和接收端 ESP-IDF 构建。
-
-## 项目结构
+MaixVision 终端会打印实际视频地址。通过 USB NCM 时通常为：
 
 ```text
-wearable/        MYOSA ESP32 佩戴端固件
-receiver/        ESP32-S3 BLE 接收端固件
-shared/          主机测试共用的数据包、动作与反馈逻辑
-python/          电脑端 Dashboard、同步、模型、训练和测试
-maixcam2/        MaixPy RTSP/UVC 摄像头应用
-scripts/         构建、烧录、摄像头探测和演示启动辅助脚本
-tests/           C 语言主机测试
-docs/            设计与实现记录
+rtsp://10.203.102.1:8554/live
 ```
 
-## 相关文档
+如果需要本地 UVC 设备，将 `MODE` 改为 `"uvc"`，在 MaixCAM2 中启用 UVC，并探测电脑端相机编号：
 
-- [MaixCAM2 设置](maixcam2/README.md)
+```bash
+PYTHONPATH=python python scripts/probe_cameras.py
+```
+
+### 5. 启动 Dashboard
+
+启动脚本会选择右侧、自动查找 ESP32-S3 串口、写入 `python/sessions/maixcam2_demo.csv`，并由 Dashboard 自动加载 `python/models/imu_cnnbigru.pt`。
+
+```bash
+PYTHON=python ./scripts/start_maixcam2_demo.sh \
+  rtsp://10.203.102.1:8554/live
+```
+
+如果 MaixVision 打印的地址不同，请使用该准确地址。使用 UVC 时，将 RTSP URL 换成探测到的数字相机编号。
+
+## 操作与输出
+
+### 动作状态与反馈
+
+| 类别 | 内部值 | 含义 | 输出行为 |
+|---|---|---|---|
+| 动作 | `idle` | 没有正在进行的重复动作 | Ready 状态 |
+| 动作 | `forearm_rotation` | 类似前臂旋前/旋后 | OLED 显示 `ROTATE` |
+| 动作 | `elbow_flexion` | 类似肘关节屈伸往返 | OLED 显示 `ELBOW` |
+| 质量 | `none` | 尚无完成动作质量 | 不响 |
+| 质量 | `ok` | 幅度充分且速度可接受 | 一声 880 Hz 成功音 |
+| 质量 | `too_fast` | 持续时间过短或峰值速度过高 | 两声低频警告音 |
+| 质量 | `insufficient_range` | 积分角度范围低于阈值 | 两声警告音，次数不增加 |
+| 视觉 | `trunk_compensation` | 肩部相对髋部的偏移超过视觉阈值 | Dashboard 安全提示 |
+
+### Dashboard 按键
+
+| 按键 | 功能 |
+|---|---|
+| `b` | 清除已有躯干基线；下一帧有效姿态成为新基线 |
+| `r` | 重置当前重复动作的活动范围追踪器 |
+| `q` 或 `Esc` | 刷新剩余同步样本、关闭资源并退出 |
+
+### Dashboard 命令行参数
+
+```bash
+PYTHONPATH=python python python/run_dashboard.py --help
+```
+
+| 参数 | 默认值 | 说明 |
+|---|---|---|
+| `--port` | `auto` | 接收端串口；自动选择优先 `usbmodem`，其次 `usbserial` |
+| `--camera` | `0` | 兼容旧接口的本地相机编号 |
+| `--camera-source` | 未设置 | 推荐视频输入：`auto`、非负编号或 `rtsp://` URL |
+| `--output` | `sessions/session.csv` | 相对于当前工作目录的会话 CSV 路径 |
+| `--model` | `python/models/imu_cnnbigru.pt` | IMU checkpoint；已配置路径缺失时会明确终止 |
+| `--fusion-model` | 未设置 | 可选的同步 IMU/姿态 checkpoint |
+| `--model-confidence` | `0.70` | 采用多模态输出所需的最低置信度 |
+| `--side` | `left` | MediaPipe 侧别；可选 `left`/`right`，演示脚本使用 `right` |
+| `--subject` | 空 | 写入每行 CSV 的参与者编号 |
+| `--label-exercise` | 空 | 数据采集时可选的动作真值标签 |
+| `--label-quality` | 空 | 数据采集时可选的质量真值标签 |
+| `--headless-smoke-test` | 关闭 | 不打开硬件或 GUI，只验证 IMU checkpoint 和纯运行状态 |
+
+当摄像头或关键点不可用时，界面切换为 `IMU Only`；串口处理和 IMU 反馈仍继续。恢复有效画面与关键点后，视觉会自动重新参与融合。
+
+### 会话 CSV 字段
+
+当前 Dashboard 写入 27 列：
+
+| 分组 | 字段 |
+|---|---|
+| 时间 | `t_ms`, `received_s` |
+| 原始 IMU | `ax`, `ay`, `az`, `gx`, `gy`, `gz` |
+| 固件决策 | `state`, `rep_count`, `quality` |
+| 姿态 | `elbow_angle_deg`, `shoulder_angle_deg`, `trunk_displacement`, `wrist_x`, `wrist_y`, `elbow_velocity_dps`, `shoulder_velocity_dps`, `visibility`, `vision_valid` |
+| 可选模型 | `model_exercise`, `model_quality`, `model_confidence`, `visual_confidence` |
+| 训练信息 | `subject`, `label_exercise`, `label_quality` |
+
+如果 50 ms 同步容差内没有姿态样本，姿态值填 0，`vision_valid` 为 `0.0`。`t_ms` 保留佩戴端时间戳，`received_s` 是用于跨设备匹配的电脑单调时钟接收时间。
+
+## 仓库结构
+
+以下同时标出源码和运行产物；构建目录、缓存、会话记录和本地模型不是手写源码。
+
+```text
+lite_rehab_mvp/
+├── README.md / README_zh.md       项目概览与完整源码指南
+├── COMPONENTS.md                  中英文元器件表
+├── WIRING_GUIDE.md                电气连接与上电检查
+├── DEMO_GUIDE.md                  详细演示流程
+├── wearable/                      ESP32 佩戴端固件项目
+│   ├── CMakeLists.txt
+│   ├── sdkconfig.defaults
+│   └── main/                      传感器、OLED、BLE Server、状态和入口
+├── receiver/                      ESP32-S3 接收端固件项目
+│   ├── CMakeLists.txt
+│   ├── sdkconfig.defaults
+│   └── main/                      BLE Client、输出、遥测和入口
+├── shared/                        可移植数据包、动作与反馈逻辑
+├── tests/                         C17 主机测试和运行脚本
+├── python/
+│   ├── run_dashboard.py           电脑端实时应用
+│   ├── collect_data.py            带标签 IMU 采集器
+│   ├── prepare_public_imu.py      公开数据转换器
+│   ├── train_1d_cnn.py            IMU 模型训练
+│   ├── train_multimodal.py        IMU/姿态融合模型训练
+│   ├── literehab/                 可复用 Python 包
+│   ├── tests/                     Python 测试套件
+│   ├── data/imu_public_small/     已跟踪的 7,600 条公开子集
+│   ├── models/                    本地模型/任务文件（gitignore）
+│   └── sessions/                  运行时 CSV（gitignore）
+├── maixcam2/                      MaixPy RTSP/UVC 应用和设置指南
+├── scripts/                       构建、烧录、启动、探测和测试工具
+├── docs/                          Pitch 文案以及设计/实施记录
+├── assets/institutions/           Pitch PDF 使用的机构 Logo
+└── output/pdf/                    可编辑 LaTeX Pitch 与编译 PDF
+```
+
+本地 `.worktrees/`、`wearable/build/`、`receiver/build/`、`tests/build/`、`.pytest_cache/`、`.cache/` 和 `__pycache__/` 均为开发产物，不是额外的 LiteRehab 项目。
+
+## Python 项目完整说明
+
+### 可执行 Python 与 MaixPy 文件
+
+| 文件 | 内容与职责 | 典型用途 |
+|---|---|---|
+| `python/run_dashboard.py` | 主编排循环：串口线程、摄像头、MediaPipe 兼容层、姿态提取、同步、IMU/融合推理、反馈决策、OpenCV UI、按键和 CSV | `PYTHONPATH=python python python/run_dashboard.py ...` |
+| `python/collect_data.py` | 从接收端录制固定时长、单一标签的 IMU CSV；自动选串口并保存 subject/label | 在 `python/` 运行或显式指定输出目录 |
+| `python/prepare_public_imu.py` | 将 Apple Watch 源 CSV 转为有限右腕子集；映射 3 类动作、降采样到 50 Hz、将 rad/s 转为 deg/s | 从引用数据集重建公开小子集 |
+| `python/train_1d_cnn.py` | 读取标签记录，以步长 50 生成 100 点窗口，进行按参与者留出训练，保存 `cnn_1d` 或 `cnn_bigru` checkpoint | 训练或重训 IMU 分类器 |
+| `python/train_multimodal.py` | 读取同步 IMU/姿态 CSV，要求每文件只有一个 subject/exercise/quality 组合，训练双分支 CNN-BiGRU 并保存 schema | 可选融合模型训练 |
+| `scripts/probe_cameras.py` | 在有限 OpenCV 编号范围内查找能返回完整帧的本地相机 | 查找 MaixCAM2 UVC 编号 |
+| `maixcam2/main.py` | 提供 `run_rtsp()` 与 `run_uvc()`；默认 640×480、30 FPS RTSP | 在 MaixVision/MaixCAM2 上运行 |
+
+### `python/literehab` 包模块
+
+| 模块 | 内容与公开职责 |
+|---|---|
+| `__init__.py` | 标记可复用的电脑端处理包 |
+| `camera_source.py` | 校验 `auto`/编号/RTSP 输入，探测本地相机，设置低延迟参数，维护健康状态，限速重连并释放 OpenCV 资源 |
+| `cnn.py` | 构建六通道 IMU `cnn_1d` 和三层卷积 CNN-BiGRU |
+| `dashboard_state.py` | 定义 CSV 字段、置信度规则/模型决策、规则警告优先级、摄像头健康、躯干代偿门控和同步行构造 |
+| `dashboard_view.py` | 将内部状态映射为可读标签/颜色，渲染 1280×720 Dashboard、反馈条、状态标签、指标和陀螺仪曲线 |
+| `dataset.py` | 创建固定长度重叠 NumPy 窗口，并校验维度和参数 |
+| `fusion.py` | 应用反馈优先级，返回 `Fusion`/`IMU-only` 模式和面向用户的提示 |
+| `multimodal.py` | 定义姿态 schema、双时序 CNN-BiGRU、checkpoint 校验、滑动窗口推理、可见度门控和预测数据类 |
+| `pose_features.py` | 选择左右侧 MediaPipe 关键点，计算关节角、归一化腕位置、角速度、可见度、躯干偏移和单次 ROM |
+| `pose_math.py` | 提供三点角度和归一化躯干代偿几何函数 |
+| `synchronization.py` | 缓存串口与姿态数据，在 50 ms 内匹配最近姿态，每条 IMU 只排出一次并保留视觉缺失 |
+| `telemetry.py` | 定义经校验的遥测数据类，并解析接收端 11 字段 `IMU,...` 串口行 |
+
+### 模型与数据
+
+| 路径 | 内容 |
+|---|---|
+| `python/models/imu_cnnbigru.pt` | 随项目提供的课堂 checkpoint：100 点、6 通道 CNN-BiGRU，标签为 `elbow_flexion`、`forearm_rotation`、`shoulder_abduction` |
+| `python/models/pose_landmarker_lite.task` | 当旧版 `mp.solutions` 不可用时由 MediaPipe Tasks 使用的姿态模型 |
+| `python/data/imu_public_small/*.csv` | 3 位公开参与者、3 类动作的 9 段右腕记录，共 7,600 行数据 |
+| `python/sessions/*.csv` | 本地 Dashboard 记录；默认只是运行输出，不自动视为训练真值 |
+
+公开子集来源于 [Wearable sensors-based human activity recognition dataset](https://doi.org/10.17632/s86tdtmcc2.1)，许可证为 CC BY 4.0。该数据集规模很小，checkpoint 只适用于课程演示，不作泛化能力或临床准确性声明。
+
+### Python 测试
+
+| 测试文件 | 覆盖内容 |
+|---|---|
+| `test_camera_source.py` | 输入解析、相机探测、捕获参数、健康状态、重连节流、RTSP 与清理 |
+| `test_dashboard_cli.py` | CLI 兼容、串口优先级、默认模型、CNN 预热/idle 门控、临床风格姿态配色、冒烟测试和渲染集成 |
+| `test_dashboard_state.py` | 置信度回退、警告优先级、摄像头恢复、躯干门控和完整 CSV 行 |
+| `test_dashboard_view.py` | 显示语义、圆角卡片、次数/ROM/置信度可视化、反馈条、固定画布、曲线输入与摄像头失败界面 |
+| `test_dataset.py` | 窗口长度、重叠和过短记录 |
+| `test_fusion.py` | IMU-only 回退与反馈优先级 |
+| `test_maixcam2_script.py` | RTSP 默认值和支持的 UVC Server 构造 |
+| `test_multimodal.py` | 张量形状、零置信度视觉门控、checkpoint schema 和滑动推理 |
+| `test_pose_features.py` | 左右对称、可见度 mask、侧别校验和每次重复 ROM 重置 |
+| `test_pose_math.py` | 关节角几何和归一化躯干偏移 |
+| `test_prepare_public_imu.py` | 标签/单位/采样率转换和有限记录选择 |
+| `test_synchronization.py` | 最近姿态匹配、显式视觉缺失、无损排出与退出刷新 |
+| `test_telemetry.py` | 合法串口解析和异常/未知状态拒绝 |
+| `test_train_multimodal.py` | 同步训练 schema 与可加载 checkpoint 生成 |
+
+## C 项目完整说明
+
+### 佩戴端固件：`wearable/`
+
+目标为 MYOSA ESP32 WROOM-32E（`esp32`）。组件链接共享的数据包与动作模块，并依赖 ESP-IDF I²C、GPIO、Bluetooth 和 NVS。
+
+| 文件 | 内容与职责 |
+|---|---|
+| `wearable/CMakeLists.txt` | 声明 `literehab_wearable` ESP-IDF 项目 |
+| `wearable/sdkconfig.defaults` | 选择 ESP32、NimBLE Peripheral、MTU 64、4 MB Flash 和 6144 字节主任务栈 |
+| `wearable/main/CMakeLists.txt` | 注册全部佩戴端源码以及共享 `motion_packet.c`、`motion_logic.c` |
+| `wearable/main/app_main.c` | 配置 GPIO21/22 I²C、扫描设备、初始化 OLED/MPU/BLE、校准 100 个样本、运行 50 Hz 循环、生成数据包并每 10 个样本刷新 OLED |
+| `wearable/main/mpu6050.c/.h` | 探测 `0x68`/`0x69`，配置 ±2 g 与 ±250 dps，读取 14 字节帧并估计陀螺仪零偏 |
+| `wearable/main/ssd1306.c/.h` | 最小 SSD1306 驱动：1024 字节 framebuffer、小型字符表、文本行、初始化与逐页刷新 |
+| `wearable/main/ble_server.c/.h` | 名称为 `LiteRehab-Wear` 的 NimBLE GATT Peripheral；公开一组 128-bit Service/Characteristic 并在订阅后发送通知 |
+| `wearable/main/wearable_status.c/.h` | 使用 GPIO2 指示连接/错误状态 |
+
+动作循环使用 `16384 LSB/g` 和 `131 LSB/(deg/s)` 将数据转换后用于分类，但 BLE 包发送的是原始有符号 16 位传感器值。
+
+### 接收端固件：`receiver/`
+
+目标为 ESP32-S3-DevKitC-1 N16R8（`esp32s3`）。组件链接共享的数据包与反馈模块，并依赖 NimBLE、NVS、GPIO 和 LEDC。
+
+| 文件 | 内容与职责 |
+|---|---|
+| `receiver/CMakeLists.txt` | 声明 `literehab_receiver` ESP-IDF 项目 |
+| `receiver/sdkconfig.defaults` | 选择 ESP32-S3、NimBLE Central、MTU 64、16 MB Flash、80 MHz Octal PSRAM、原生 USB Console 和 6144 字节主任务栈 |
+| `receiver/main/CMakeLists.txt` | 注册接收端源码以及共享 `motion_packet.c`、`feedback_logic.c` |
+| `receiver/main/app_main.c` | 初始化输出和反馈状态，报告 BLE 连接/丢包序号，将合法数据分发给物理反馈和串口输出 |
+| `receiver/main/ble_client.c/.h` | 扫描 `LiteRehab-Wear`、连接、交换 MTU、发现自定义服务/特征、启用通知、校验长度/CRC，并在断线后重连 |
+| `receiver/main/receiver_outputs.c/.h` | 通过 FreeRTOS Queue 控制 GPIO2 LED 与 GPIO18 LEDC 蜂鸣器；成功一次高音，警告两次低音 |
+| `receiver/main/serial_telemetry.c/.h` | 将原始数据转为 g 和 deg/s，输出 Python 使用的稳定 `IMU,...` 行 |
+
+### 共享可移植 C：`shared/`
+
+| 文件 | 内容与职责 |
+|---|---|
+| `motion_packet.h` | 定义动作/质量枚举和 packed version-1 `motion_packet_t` 线协议 |
+| `motion_packet.c` | 静态保证 26 字节大小，计算 CRC-16，完成数据包并校验 magic/version/CRC |
+| `motion_logic.h` | 定义可调阈值、公开动作结果以及状态机/滤波器持久状态 |
+| `motion_logic.c` | 实现陀螺仪低通、Roll/Pitch 互补滤波、仅 idle 更新的自适应阈值、轴/加速度分类、反向阶段、幅度积分、速度/范围质量、refractory 时间和计数 |
+| `feedback_logic.h` | 定义 `NONE`、`SUCCESS`、`WARNING` 接收端事件与转移状态 |
+| `feedback_logic.c` | 只在动作从 active 转为 idle 时产生一次事件，防止持久 quality 值重复填充蜂鸣器队列 |
+
+#### BLE 数据包布局
+
+| 字段 | 类型 | 字节 | 含义 |
+|---|---|---:|---|
+| `magic` / `version` | `uint8_t` + `uint8_t` | 2 | `0xA5`，协议版本 `1` |
+| `sequence` | `uint16_t` | 2 | 可回绕的通知序号 |
+| `timestamp_ms` | `uint32_t` | 4 | 佩戴端运行时间戳 |
+| `accel[3]` | `int16_t[3]` | 6 | MPU6050 原始加速度 |
+| `gyro[3]` | `int16_t[3]` | 6 | 扣除零偏后的原始陀螺仪 |
+| `rep_count` | `uint16_t` | 2 | 已接受的重复次数 |
+| `state` / `quality` | `uint8_t` + `uint8_t` | 2 | 动作和最近质量枚举 |
+| `crc16` | `uint16_t` | 2 | 对前 24 字节计算的 CRC |
+
+CRC 初值为 `0xFFFF`，多项式为 `0x1021`。修改 packed 布局时必须决定是否升级协议版本，并同步更新两块开发板和主机测试。
+
+### C 主机测试：`tests/`
+
+| 文件 | 覆盖内容 |
+|---|---|
+| `run_host_tests.sh` | 使用 C17、`-Wall -Wextra -Werror` 编译共享代码，为动作数学链接 `-lm`，运行 3 个测试二进制 |
+| `test_motion_packet.c` | 数据包大小、完成/校验、数据损坏与 magic 错误拒绝 |
+| `test_motion_logic.c` | idle、两类动作循环、正常/过快/幅度不足结果、计数和仅 idle 阈值更新 |
+| `test_feedback_logic.c` | 每次 active-to-idle 完成只产生一个成功或警告事件 |
+
+## 构建与验证
+
+### 单项检查
+
+```bash
+# 可移植 C 逻辑
+./tests/run_host_tests.sh
+
+# Python 测试套件
+PYTHONPATH=python python -m pytest -q python/tests
+
+# Dashboard checkpoint 与纯状态冒烟测试
+PYTHONPATH=python python python/run_dashboard.py --headless-smoke-test
+
+# 两个 ESP-IDF 固件项目
+./scripts/build_all.sh
+```
+
+### 完整仓库检查
+
+```bash
+PYTHON=python ./scripts/test_all.sh
+```
+
+当前测试套件收集 **78 项 Python 测试**，并运行 **3 个 C 主机测试程序**、Python 语法检查、Dashboard checkpoint 冒烟测试和两套 ESP-IDF 构建。BLE、摄像头传输、OLED、LED 和蜂鸣器仍需按照 [DEMO_GUIDE.md](DEMO_GUIDE.md) 在真实硬件上验收。
+
+### 辅助脚本
+
+| 脚本 | 作用 |
+|---|---|
+| `scripts/build_all.sh` | 加载 ESP-IDF 6.0.2 并构建两个固件项目 |
+| `scripts/flash_wearable.sh` | 将 `wearable/` 烧录到指定串口 |
+| `scripts/flash_receiver.sh` | 将 `receiver/` 烧录到指定原生 USB 端口 |
+| `scripts/start_maixcam2_demo.sh` | 使用给定视频源启动右臂 Dashboard，并固定会话路径 |
+| `scripts/probe_cameras.py` | 列出可用的本地 OpenCV/UVC 编号 |
+| `scripts/test_all.sh` | 运行 C、Python、语法、冒烟和固件构建检查 |
+
+## 故障排查
+
+| 现象 | 可能原因 | 处理方法 |
+|---|---|---|
+| OLED 显示 `MPU ERROR` | 未找到 MPU6050 | 断电检查 JST 级联；固件支持地址 `0x68`/`0x69` |
+| OLED 一直显示 `BLE WAIT` | 接收端未上电、未烧录或未订阅 | 上电/烧录接收端并将两板保持在数米内 |
+| 找不到接收端串口 | ESP32-S3 接口或线缆错误 | 使用标有 `USB` 的原生接口和数据线 |
+| ESP32-S3 烧录失败 | 原生 USB 复位或波特率不稳定 | 关闭串口占用，使用 BOOT+RST 进入下载模式，以 `BAUD=115200` 重试 |
+| Dashboard 提示无串口 | 接收端断开或端口被占用 | 关闭 `idf.py monitor` 等工具，并显式传入 `--port` |
+| 找不到 IMU checkpoint | `python/models/imu_cnnbigru.pt` 缺失 | 恢复模型文件或通过 `--model` 传入合法路径 |
+| Camera unavailable/retrying | URL/编号、线缆、权限或视频流错误 | 准确复制 MaixVision URL，或重新运行 `scripts/probe_cameras.py` |
+| 有画面但一直 `IMU Only` | 所选侧关键点不完整 | 选择正确 `--side`，确保肩、肘、腕、髋无遮挡 |
+| Python 3.13 没有 MediaPipe | 依赖标记有意限制版本 | 使用推荐的 Python 3.12 环境 |
+| 重复计数不稳定 | 传感器方向、固定或阈值问题 | 牢固固定 MPU6050；修改 `motion_default_config()` 时必须补充主机测试 |
+
+## 文档与安全边界
+
 - [完整接线指南](WIRING_GUIDE.md)
 - [分步演示指南](DEMO_GUIDE.md)
 - [中英文元器件清单](COMPONENTS.md)
+- [MaixCAM2 设置与官方参考](maixcam2/README.md)
+- `docs/superpowers/specs/`：已确认设计记录
+- `docs/superpowers/plans/`：历史实施计划
+- `docs/pitch/` 与 `output/pdf/`：课程单页 Pitch 源文件和输出
 
-## 安全说明
+### 安全边界
 
-LiteRehab Fusion 是用于课程和工程演示的原型，不是医疗器械。它不用于诊断、临床评分、治疗处方或无人监督的康复决策。演示过程中，如果参与者出现疼痛、头晕、麻木或其他异常不适，应立即停止。
+本仓库仅用于工程演示，不用于诊断、治疗处方、临床评分、跌倒预防或无人监督的康复决策。小规模公开数据模型没有经过临床验证。训练动作的选择和监督责任始终属于理疗师或其他合格专业人员。
+
+如果参与者出现疼痛、头晕、麻木、失去平衡、异常疲劳或任何不适，应立即停止。不要使用松动接线，不要反插 JST，不要将 5 V 接入 GPIO，也不要把电流未知的蜂鸣器直接接到 ESP32-S3。
