@@ -27,15 +27,16 @@ def test_rejects_unknown_state():
 
 
 def test_parses_valid_ecg_receiver_line():
-    sample = parse_ecg_line("ECG,5678,2184,72.5,1,1,0")
+    sample = parse_ecg_line("ECG,5678,2184,155.0,1,1,1")
 
     assert sample is not None
     assert sample.timestamp_ms == 5678
     assert sample.raw_adc == 2184
-    assert sample.bpm == pytest.approx(72.5)
+    assert sample.bpm == pytest.approx(155.0)
     assert sample.leads_connected
     assert sample.beat
-    assert not sample.rapid_change
+    assert sample.high_bpm_alert
+    assert sample.rapid_change
 
 
 @pytest.mark.parametrize(

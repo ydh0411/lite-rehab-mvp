@@ -75,7 +75,7 @@ POSE_JOINT_COLOR = (244, 219, 118)
 POSE_JOINT_OUTLINE = (31, 24, 14)
 ECG_FIELDS = (
     "t_ms", "received_s", "raw_adc", "bpm", "leads_connected", "beat",
-    "rapid_change",
+    "high_bpm_alert",
 )
 
 
@@ -358,7 +358,7 @@ def main() -> None:
                     "bpm": latest_ecg.bpm,
                     "leads_connected": int(latest_ecg.leads_connected),
                     "beat": int(latest_ecg.beat),
-                    "rapid_change": int(latest_ecg.rapid_change),
+                    "high_bpm_alert": int(latest_ecg.high_bpm_alert),
                 })
                 drained_ecg = True
             if drained_ecg:

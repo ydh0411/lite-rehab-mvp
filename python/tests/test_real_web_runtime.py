@@ -96,7 +96,7 @@ def test_runtime_records_synchronized_motion_and_ecg_rows(tmp_path):
         1,
         "ok",
     )
-    ecg = EcgTelemetrySample(1000, 2048, 72.0, True, True, False)
+    ecg = EcgTelemetrySample(1000, 2048, 155.0, True, True, True)
 
     runtime.record_synchronized([
         SynchronizedSample(motion, received_s=10.0, pose=None),
@@ -116,6 +116,8 @@ def test_runtime_records_synchronized_motion_and_ecg_rows(tmp_path):
     assert row["vision_valid"] == "0.0"
     assert ecg_row["raw_adc"] == "2048"
     assert ecg_row["leads_connected"] == "1"
+    assert ecg_row["high_bpm_alert"] == "1"
+    assert "rapid_change" not in ecg_row
 
 
 def test_runtime_worker_lifecycle_supports_injected_sources(tmp_path):

@@ -20,7 +20,7 @@ from .web_models import LiveSnapshot
 
 ECG_FIELDS = (
     "t_ms", "received_s", "raw_adc", "bpm", "leads_connected", "beat",
-    "rapid_change",
+    "high_bpm_alert",
 )
 
 
@@ -517,7 +517,7 @@ class LiteRehabRuntime:
                 "bpm": sample.bpm,
                 "leads_connected": int(sample.leads_connected),
                 "beat": int(sample.beat),
-                "rapid_change": int(sample.rapid_change),
+                "high_bpm_alert": int(sample.high_bpm_alert),
             })
             self._writers.ecg_file.flush()
 

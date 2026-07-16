@@ -25,7 +25,12 @@ class EcgTelemetrySample:
     bpm: float
     leads_connected: bool
     beat: bool
-    rapid_change: bool
+    high_bpm_alert: bool
+
+    @property
+    def rapid_change(self) -> bool:
+        """Compatibility alias for callers using the previous event name."""
+        return self.high_bpm_alert
 
 
 def parse_telemetry_line(line: str) -> TelemetrySample | None:
