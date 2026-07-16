@@ -18,5 +18,10 @@ models/
 .cache/
 .worktrees/
 
+# Web frontend
+web/node_modules/
+web/dist/
+*.tsbuildinfo
+
 # macOS
 .DS_Store
