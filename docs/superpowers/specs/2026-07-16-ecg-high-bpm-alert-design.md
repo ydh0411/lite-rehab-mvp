@@ -27,9 +27,9 @@ calibration outside the current scope.
    BPM value.
 3. Candidate intervals outside the configured valid RR range are rejected as
    noise and do not update the displayed BPM or alarm state.
-4. The detector stores the five most recent valid RR intervals and calculates
-   BPM from their median. During startup, it uses the median of the valid
-   intervals available so far.
+4. The detector stores the five most recent valid RR intervals. It does not
+   publish BPM until at least three valid intervals are available, then
+   calculates BPM from the median of up to the five most recent intervals.
 5. The existing refractory period remains a first-line duplicate-peak guard;
    RR validation and median filtering provide the additional protection needed
    against isolated 200+ BPM spikes.
