@@ -52,4 +52,3 @@ def test_fixture_runtime_records_secondary_commands():
 
     assert runtime.baseline_resets == 1
     assert runtime.range_resets == 1
-

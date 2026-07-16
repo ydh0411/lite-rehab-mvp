@@ -522,4 +522,3 @@ headless web smoke test pass.
 git add python/run_web_dashboard.py scripts/start_web_demo.sh README.md README_zh.md DEMO_GUIDE.md .gitignore python/tests/test_web_app.py
 git commit -m "feat: ship offline LiteRehab web demo"
 ```
-

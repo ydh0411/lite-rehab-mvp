@@ -301,4 +301,3 @@ class SessionRepository:
         ]
         average = round(sum(bpm_values) / len(bpm_values), 1) if bpm_values else None
         return average, completeness, series, None
-
