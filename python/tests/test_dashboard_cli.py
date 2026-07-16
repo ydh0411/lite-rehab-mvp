@@ -1,3 +1,4 @@
+import queue
 from types import SimpleNamespace
 from pathlib import Path
 
@@ -15,6 +16,8 @@ from run_dashboard import (
     build_parser,
     choose_port,
     draw_pose,
+    ecg_output_path,
+    put_latest,
     resolve_camera_argument,
 )
 
@@ -157,6 +160,24 @@ def test_dashboard_runtime_uses_composed_view():
     source = Path(run_dashboard.__file__).read_text()
 
     assert "DashboardViewState(" in source
-    assert "render_dashboard(frame, history, view_state)" in source
+    assert "render_dashboard(frame, history, view_state, ecg_history)" in source
     assert "overlay = [" not in source
     assert "np.hstack((frame, chart))" not in source
+
+
+def test_ecg_companion_log_uses_session_stem():
+    assert ecg_output_path(Path("sessions/session.csv")) == Path(
+        "sessions/session_ecg.csv"
+    )
+
+
+def test_put_latest_keeps_queue_bounded_and_drops_oldest():
+    values = queue.Queue(maxsize=2)
+
+    put_latest(values, 1)
+    put_latest(values, 2)
+    put_latest(values, 3)
+
+    assert values.qsize() == 2
+    assert values.get_nowait() == 2
+    assert values.get_nowait() == 3

@@ -37,6 +37,8 @@ class DashboardViewState:
     camera_status: str
     rom_deg: float | None
     confidence_text: str
+    ecg_bpm: float | None = None
+    ecg_connected: bool = False
 
 
 DISPLAY_LABELS = {
@@ -356,6 +358,64 @@ def draw_gyro_chart(panel: np.ndarray, history) -> None:
         _text(panel, label, (x + 8, height - 4), 0.3, "muted_text")
 
 
+def draw_ecg_chart(panel: np.ndarray, history, state: DashboardViewState) -> None:
+    height, width = panel.shape[:2]
+    _text(panel, "ECG WAVEFORM", (10, 21), 0.38, "muted_text")
+    status = (
+        f"BPM {state.ecg_bpm:.0f}"
+        if state.ecg_connected and state.ecg_bpm is not None
+        else "LEADS OFF"
+    )
+    tone = "success" if state.ecg_connected else "danger"
+    _text(panel, status, (width - 105, 21), 0.38, tone, 1)
+
+    plot_left, plot_right = 10, width - 10
+    plot_top, plot_bottom = 34, height - 16
+    center_y = (plot_top + plot_bottom) // 2
+    cv2.line(
+        panel,
+        (plot_left, center_y),
+        (plot_right, center_y),
+        COLORS["surface_alt"],
+        1,
+        cv2.LINE_AA,
+    )
+
+    samples = [sample for sample in history if sample.leads_connected]
+    if len(samples) < 2:
+        return
+    values = np.asarray([sample.raw_adc for sample in samples], dtype=np.float32)
+    low = float(values.min())
+    high = float(values.max())
+    if high - low < 100.0:
+        midpoint = (high + low) * 0.5
+        low, high = midpoint - 50.0, midpoint + 50.0
+    padding = (high - low) * 0.1
+    low -= padding
+    high += padding
+
+    points = []
+    for index, value in enumerate(values):
+        x = int(
+            plot_left
+            + index * (plot_right - plot_left) / max(1, len(values) - 1)
+        )
+        fraction = (float(value) - low) / (high - low)
+        y = int(plot_bottom - fraction * (plot_bottom - plot_top))
+        points.append((x, y))
+    cv2.polylines(
+        panel,
+        [np.asarray(points)],
+        False,
+        COLORS["danger"],
+        2,
+        cv2.LINE_AA,
+    )
+    for index, sample in enumerate(samples):
+        if sample.beat:
+            cv2.circle(panel, points[index], 3, COLORS["warning"], -1, cv2.LINE_AA)
+
+
 def _camera_panel(frame: np.ndarray, camera_status: str) -> np.ndarray:
     if status_tone(camera_status) == "success":
         return cv2.resize(frame, (800, 600))
@@ -385,6 +445,7 @@ def render_dashboard(
     frame: np.ndarray,
     history,
     state: DashboardViewState,
+    ecg_history=(),
 ) -> np.ndarray:
     width, height = CANVAS_SIZE
     canvas = np.full((height, width, 3), COLORS["background"], dtype=np.uint8)
@@ -427,7 +488,7 @@ def render_dashboard(
 
     _rounded_card(canvas, (840, 466), (1260, 664))
     chart = canvas[476:652, 850:1250]
-    draw_gyro_chart(chart, history)
+    draw_ecg_chart(chart, ecg_history, state)
     _text(
         canvas,
         "B  BASELINE     R  RESET ROM     Q  QUIT",

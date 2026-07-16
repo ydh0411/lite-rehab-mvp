@@ -7,6 +7,7 @@ import queue
 import threading
 import time
 from collections import deque
+from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
@@ -37,7 +38,12 @@ from literehab.pose_features import (
     extract_pose_features,
 )
 from literehab.synchronization import ReceivedTelemetry, SampleSynchronizer
-from literehab.telemetry import TelemetrySample, parse_telemetry_line
+from literehab.telemetry import (
+    EcgTelemetrySample,
+    TelemetrySample,
+    parse_ecg_line,
+    parse_telemetry_line,
+)
 
 try:
     import mediapipe as mp
@@ -67,6 +73,30 @@ POSE_CONNECTIONS = [
 POSE_LINE_COLOR = (212, 184, 62)
 POSE_JOINT_COLOR = (244, 219, 118)
 POSE_JOINT_OUTLINE = (31, 24, 14)
+ECG_FIELDS = (
+    "t_ms", "received_s", "raw_adc", "bpm", "leads_connected", "beat",
+    "rapid_change",
+)
+
+
+@dataclass(frozen=True)
+class ReceivedEcg:
+    sample: EcgTelemetrySample
+    received_s: float
+
+
+def put_latest(target: queue.Queue, value) -> None:
+    if target.full():
+        try:
+            target.get_nowait()
+        except queue.Empty:
+            pass
+    target.put_nowait(value)
+
+
+def ecg_output_path(session_path: Path) -> Path:
+    suffix = session_path.suffix or ".csv"
+    return session_path.with_name(f"{session_path.stem}_ecg{suffix}")
 
 
 def choose_port(requested: str) -> str | None:
@@ -87,6 +117,7 @@ class SerialReader(threading.Thread):
         super().__init__(daemon=True)
         self.port = port
         self.samples: queue.Queue[ReceivedTelemetry] = queue.Queue(maxsize=500)
+        self.ecg_samples: queue.Queue[ReceivedEcg] = queue.Queue(maxsize=1000)
         self.stop_event = threading.Event()
         self.status = "connecting"
 
@@ -98,15 +129,19 @@ class SerialReader(threading.Thread):
                     while not self.stop_event.is_set():
                         line = device.readline().decode("utf-8", "ignore")
                         sample = parse_telemetry_line(line)
-                        if sample is None:
+                        received_s = time.monotonic()
+                        if sample is not None:
+                            put_latest(
+                                self.samples,
+                                ReceivedTelemetry(sample, received_s),
+                            )
                             continue
-                        if self.samples.full():
-                            try:
-                                self.samples.get_nowait()
-                            except queue.Empty:
-                                pass
-                        self.samples.put_nowait(
-                            ReceivedTelemetry(sample, time.monotonic()))
+                        ecg_sample = parse_ecg_line(line)
+                        if ecg_sample is not None:
+                            put_latest(
+                                self.ecg_samples,
+                                ReceivedEcg(ecg_sample, received_s),
+                            )
             except (OSError, serial.SerialException) as error:
                 self.status = f"reconnecting: {error}"
                 time.sleep(1)
@@ -237,7 +272,9 @@ def main() -> None:
                   if args.fusion_model is not None else None)
     synchronizer = SampleSynchronizer()
     history: deque[TelemetrySample] = deque(maxlen=250)
+    ecg_history: deque[EcgTelemetrySample] = deque(maxlen=500)
     latest: TelemetrySample | None = None
+    latest_ecg: EcgTelemetrySample | None = None
     cnn_prediction = None
     multimodal_prediction = None
 
@@ -245,6 +282,10 @@ def main() -> None:
     log_file = args.output.open("w", newline="")
     log = csv.DictWriter(log_file, fieldnames=SESSION_FIELDS)
     log.writeheader()
+    ecg_path = ecg_output_path(args.output)
+    ecg_log_file = ecg_path.open("w", newline="")
+    ecg_log = csv.DictWriter(ecg_log_file, fieldnames=ECG_FIELDS)
+    ecg_log.writeheader()
 
     camera = CameraSource(camera_argument, cv2)
     camera_configured = mp is not None
@@ -301,6 +342,27 @@ def main() -> None:
                 synchronizer.add_imu(received)
                 history.append(latest)
                 cnn_prediction = cnn.update(latest) or cnn_prediction
+
+            drained_ecg = False
+            while True:
+                try:
+                    received_ecg = reader.ecg_samples.get_nowait()
+                except queue.Empty:
+                    break
+                latest_ecg = received_ecg.sample
+                ecg_history.append(latest_ecg)
+                ecg_log.writerow({
+                    "t_ms": latest_ecg.timestamp_ms,
+                    "received_s": received_ecg.received_s,
+                    "raw_adc": latest_ecg.raw_adc,
+                    "bpm": latest_ecg.bpm,
+                    "leads_connected": int(latest_ecg.leads_connected),
+                    "beat": int(latest_ecg.beat),
+                    "rapid_change": int(latest_ecg.rapid_change),
+                })
+                drained_ecg = True
+            if drained_ecg:
+                ecg_log_file.flush()
 
             camera_time = time.monotonic()
             ok, frame = camera.read()
@@ -376,8 +438,12 @@ def main() -> None:
                 camera_status=camera.status,
                 rom_deg=elbow_range,
                 confidence_text=confidence_text,
+                ecg_bpm=(latest_ecg.bpm if latest_ecg is not None else None),
+                ecg_connected=bool(
+                    latest_ecg is not None and latest_ecg.leads_connected
+                ),
             )
-            canvas = render_dashboard(frame, history, view_state)
+            canvas = render_dashboard(frame, history, view_state, ecg_history)
             cv2.imshow("LiteRehab-Fusion MVP", canvas)
             key = cv2.waitKey(1) & 0xFF
             if key in (27, ord("q")):
@@ -393,6 +459,7 @@ def main() -> None:
         if pose is not None:
             pose.close()
         log_file.close()
+        ecg_log_file.close()
         cv2.destroyAllWindows()
 
 

@@ -11,12 +11,14 @@ from literehab.dashboard_view import (
     _draw_rom_card,
     _rounded_card,
     confidence_fraction,
+    draw_ecg_chart,
     display_label,
     feedback_presentation,
     render_dashboard,
     status_tone,
 )
 from literehab.telemetry import TelemetrySample
+from literehab.telemetry import EcgTelemetrySample
 
 
 def base_state(**changes):
@@ -31,6 +33,8 @@ def base_state(**changes):
         camera_status="connected: 0",
         rom_deg=82.5,
         confidence_text="Fusion 0.91",
+        ecg_bpm=72.5,
+        ecg_connected=True,
     )
     values.update(changes)
     return DashboardViewState(**values)
@@ -213,3 +217,23 @@ def test_camera_failure_keeps_designed_empty_state():
     assert np.any(
         canvas[330:360, 250:600] != np.asarray(COLORS["surface"])
     )
+
+
+def test_ecg_chart_renders_waveform_and_lead_status():
+    panel = np.full((176, 400, 3), COLORS["surface"], dtype=np.uint8)
+    history = [
+        EcgTelemetrySample(index, value, 72.5, True, index == 2, False)
+        for index, value in enumerate((1900, 2050, 2800, 2100, 1950))
+    ]
+
+    draw_ecg_chart(panel, history, base_state())
+
+    assert np.any(panel != np.asarray(COLORS["surface"], dtype=np.uint8))
+
+
+def test_ecg_chart_handles_disconnected_leads_without_samples():
+    panel = np.full((176, 400, 3), COLORS["surface"], dtype=np.uint8)
+
+    draw_ecg_chart(panel, [], base_state(ecg_bpm=None, ecg_connected=False))
+
+    assert np.any(panel != np.asarray(COLORS["surface"], dtype=np.uint8))

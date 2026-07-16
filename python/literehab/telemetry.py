@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 
 
 VALID_STATES = {"idle", "forearm_rotation", "elbow_flexion"}
@@ -15,6 +16,16 @@ class TelemetrySample:
     state: str
     rep_count: int
     quality: str
+
+
+@dataclass(frozen=True)
+class EcgTelemetrySample:
+    timestamp_ms: int
+    raw_adc: int
+    bpm: float
+    leads_connected: bool
+    beat: bool
+    rapid_change: bool
 
 
 def parse_telemetry_line(line: str) -> TelemetrySample | None:
@@ -38,3 +49,33 @@ def parse_telemetry_line(line: str) -> TelemetrySample | None:
     if timestamp < 0 or reps < 0:
         return None
     return TelemetrySample(timestamp, accel, gyro, state, reps, quality)
+
+
+def parse_ecg_line(line: str) -> EcgTelemetrySample | None:
+    line = line.strip()
+    if not line or line.startswith("#"):
+        return None
+    fields = line.split(",")
+    if len(fields) != 7 or fields[0] != "ECG":
+        return None
+    try:
+        timestamp = int(fields[1])
+        raw_adc = int(fields[2])
+        bpm = float(fields[3])
+        flags = tuple(int(value) for value in fields[4:7])
+    except (TypeError, ValueError):
+        return None
+    if timestamp < 0 or not 0 <= raw_adc <= 4095:
+        return None
+    if not math.isfinite(bpm) or bpm < 0.0:
+        return None
+    if any(value not in (0, 1) for value in flags):
+        return None
+    return EcgTelemetrySample(
+        timestamp,
+        raw_adc,
+        bpm,
+        bool(flags[0]),
+        bool(flags[1]),
+        bool(flags[2]),
+    )
