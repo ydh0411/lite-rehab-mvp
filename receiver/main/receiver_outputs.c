@@ -12,6 +12,12 @@
 static QueueHandle_t feedback_queue;
 static bool is_connected;
 
+typedef enum {
+    OUTPUT_EVENT_MOTION_SUCCESS,
+    OUTPUT_EVENT_MOTION_WARNING,
+    OUTPUT_EVENT_ECG_RAPID,
+} output_event_t;
+
 static void tone(unsigned frequency, unsigned duration_ms)
 {
     ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_0, frequency);
@@ -25,13 +31,18 @@ static void tone(unsigned frequency, unsigned duration_ms)
 static void feedback_task(void *arg)
 {
     (void)arg;
-    feedback_event_t event;
+    output_event_t event;
     while (true) {
         if (xQueueReceive(feedback_queue, &event, pdMS_TO_TICKS(500)) == pdTRUE) {
-            if (event == FEEDBACK_EVENT_WARNING) {
+            if (event == OUTPUT_EVENT_MOTION_WARNING) {
                 tone(280, 180); vTaskDelay(pdMS_TO_TICKS(80)); tone(220, 220);
-            } else if (event == FEEDBACK_EVENT_SUCCESS) {
+            } else if (event == OUTPUT_EVENT_MOTION_SUCCESS) {
                 tone(880, 100);
+            } else if (event == OUTPUT_EVENT_ECG_RAPID) {
+                for (int i = 0; i < 5; ++i) {
+                    tone(1000, 50);
+                    vTaskDelay(pdMS_TO_TICKS(50));
+                }
             }
         } else if (!is_connected) {
             gpio_set_level(LED_GPIO, !gpio_get_level(LED_GPIO));
@@ -64,7 +75,7 @@ esp_err_t receiver_outputs_init(void)
         .duty = 0,
     };
     ESP_ERROR_CHECK(ledc_channel_config(&channel));
-    feedback_queue = xQueueCreate(8, sizeof(feedback_event_t));
+    feedback_queue = xQueueCreate(8, sizeof(output_event_t));
     if (feedback_queue == NULL) return ESP_ERR_NO_MEM;
     xTaskCreate(feedback_task, "feedback", 3072, NULL, 4, NULL);
     return ESP_OK;
@@ -79,5 +90,16 @@ void receiver_outputs_set_connected(bool connected)
 void receiver_outputs_feedback(feedback_event_t event)
 {
     if (feedback_queue == NULL || event == FEEDBACK_EVENT_NONE) return;
-    (void)xQueueSend(feedback_queue, &event, 0);
+    const output_event_t output =
+        event == FEEDBACK_EVENT_WARNING
+            ? OUTPUT_EVENT_MOTION_WARNING
+            : OUTPUT_EVENT_MOTION_SUCCESS;
+    (void)xQueueSend(feedback_queue, &output, 0);
+}
+
+void receiver_outputs_ecg_alert(void)
+{
+    if (feedback_queue == NULL) return;
+    const output_event_t output = OUTPUT_EVENT_ECG_RAPID;
+    (void)xQueueSend(feedback_queue, &output, 0);
 }

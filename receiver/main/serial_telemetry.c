@@ -21,6 +21,7 @@ void serial_telemetry_header(void)
 {
     puts("# LiteRehab receiver ready");
     puts("# IMU,t_ms,ax_g,ay_g,az_g,gx_dps,gy_dps,gz_dps,state,rep_count,quality");
+    puts("# ECG,t_ms,raw_adc,bpm,leads_connected,beat,rapid_change");
 }
 
 void serial_telemetry_packet(const motion_packet_t *packet)
@@ -33,5 +34,18 @@ void serial_telemetry_packet(const motion_packet_t *packet)
            packet->gyro[1] / 131.0f, packet->gyro[2] / 131.0f,
            state_name(packet->state), packet->rep_count,
            quality_name(packet->quality));
+    fflush(stdout);
+}
+
+void serial_telemetry_ecg(const ecg_monitor_sample_t *sample)
+{
+    if (sample == NULL) return;
+    printf("ECG,%lu,%d,%.2f,%u,%u,%u\n",
+           (unsigned long)sample->timestamp_ms,
+           sample->raw_adc,
+           sample->result.bpm,
+           sample->result.leads_connected ? 1u : 0u,
+           sample->result.beat ? 1u : 0u,
+           sample->result.rapid_change ? 1u : 0u);
     fflush(stdout);
 }

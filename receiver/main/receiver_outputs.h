@@ -8,5 +8,6 @@
 esp_err_t receiver_outputs_init(void);
 void receiver_outputs_set_connected(bool connected);
 void receiver_outputs_feedback(feedback_event_t event);
+void receiver_outputs_ecg_alert(void);
 
 #endif
