@@ -1,26 +1,19 @@
 import { Navigate, Route, Routes } from "react-router-dom"
 
 import { AppShell } from "./AppShell"
+import { useLiveSnapshot } from "./useLiveSnapshot"
+import { LivePage } from "../features/live/LivePage"
 
-function LiveTrainingPlaceholder() {
-  return (
-    <section className="page placeholder-page" aria-labelledby="live-heading">
-      <header className="page-header">
-        <div>
-          <p className="eyebrow">Current session</p>
-          <h1 id="live-heading">Live training</h1>
-          <p>Camera, movement quality, and ECG will appear when the local runtime connects.</p>
-        </div>
-      </header>
-      <div className="placeholder-panel">
-        <span className="placeholder-mark" aria-hidden="true">LR</span>
-        <div>
-          <strong>Waiting for LiteRehab hardware</strong>
-          <p>The interface remains available while serial and camera sources reconnect.</p>
-        </div>
-      </div>
-    </section>
-  )
+function ConnectedLivePage() {
+  const live = useLiveSnapshot()
+  return <LivePage
+    snapshot={live.snapshot}
+    connectionState={live.connectionState}
+    onStart={live.start}
+    onStop={live.stop}
+    onBaseline={live.baseline}
+    onResetRange={live.resetRange}
+  />
 }
 
 function HistoryPlaceholder() {
@@ -48,7 +41,7 @@ export function App() {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route index element={<LiveTrainingPlaceholder />} />
+        <Route index element={<ConnectedLivePage />} />
         <Route path="history" element={<HistoryPlaceholder />} />
         <Route path="reports/:sessionId" element={<HistoryPlaceholder />} />
         <Route path="*" element={<Navigate to="/" replace />} />
