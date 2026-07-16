@@ -62,12 +62,7 @@ function feedbackTone(feedback: string): string {
 
 function cameraAvailable(status: string): boolean {
   const normalized = status.toLowerCase()
-  return ![
-    "unavailable",
-    "failure",
-    "reconnecting",
-    "not connected",
-  ].some((term) => normalized.includes(term))
+  return normalized.startsWith("connected:")
 }
 
 

@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from literehab.web_app import create_app
+from literehab.web_app import camera_frames, create_app
 from literehab.web_runtime import FixtureRuntime
 
 
@@ -58,6 +58,19 @@ def test_camera_is_explicitly_unavailable_without_a_frame(tmp_path):
 
     assert response.status_code == 503
     assert response.json()["detail"] == "Camera frame unavailable"
+
+
+def test_camera_stream_is_rate_limited(monkeypatch):
+    runtime = FixtureRuntime()
+    waits = []
+    monkeypatch.setattr(runtime, "jpeg_frame", lambda: b"second-frame")
+    monkeypatch.setattr("literehab.web_app.time.sleep", waits.append)
+
+    stream = camera_frames(runtime, b"first-frame", interval_s=0.05)
+    assert b"first-frame" in next(stream)
+    assert b"second-frame" in next(stream)
+
+    assert waits == [0.05]
 
 
 def test_unknown_report_returns_not_found(tmp_path):

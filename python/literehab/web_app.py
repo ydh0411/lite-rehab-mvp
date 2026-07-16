@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from dataclasses import asdict
 from pathlib import Path
 from typing import Iterator
@@ -28,6 +29,22 @@ class StartSessionRequest(BaseModel):
 
 def _runtime_conflict(error: RuntimeError) -> HTTPException:
     return HTTPException(status_code=409, detail=str(error))
+
+
+def camera_frames(
+    runtime: RuntimeProtocol,
+    first_frame: bytes,
+    interval_s: float = 0.05,
+) -> Iterator[bytes]:
+    frame: bytes | None = first_frame
+    while frame is not None:
+        yield (
+            b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
+            + frame
+            + b"\r\n"
+        )
+        time.sleep(interval_s)
+        frame = runtime.jpeg_frame()
 
 
 def create_app(
@@ -92,23 +109,13 @@ def create_app(
         except WebSocketDisconnect:
             return
 
-    def camera_frames(first_frame: bytes) -> Iterator[bytes]:
-        frame: bytes | None = first_frame
-        while frame is not None:
-            yield (
-                b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
-                + frame
-                + b"\r\n"
-            )
-            frame = runtime.jpeg_frame()
-
     @app.get("/api/camera.mjpg")
     def camera() -> StreamingResponse:
         frame = runtime.jpeg_frame()
         if frame is None:
             raise HTTPException(status_code=503, detail="Camera frame unavailable")
         return StreamingResponse(
-            camera_frames(frame),
+            camera_frames(runtime, frame),
             media_type="multipart/x-mixed-replace; boundary=frame",
         )
 

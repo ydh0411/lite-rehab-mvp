@@ -52,6 +52,24 @@ describe("LivePage", () => {
     expect(screen.getByText("Camera unavailable")).toBeVisible()
   })
 
+  it("keeps the camera placeholder visible while the device is retrying", () => {
+    render(
+      <LivePage
+        snapshot={{
+          ...initialSnapshot,
+          camera_status: "no local camera found; retrying",
+        }}
+        connectionState="connected"
+        {...handlers()}
+      />,
+    )
+
+    expect(screen.getByText("Camera unavailable")).toBeVisible()
+    expect(
+      screen.queryByAltText("Annotated rehabilitation camera feed"),
+    ).not.toBeInTheDocument()
+  })
+
   it("labels safety feedback with direct coaching copy", () => {
     render(
       <LivePage
