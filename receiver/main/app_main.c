@@ -17,7 +17,7 @@ static void ecg_received(const ecg_monitor_sample_t *sample)
 {
     serial_telemetry_ecg(sample);
     receiver_display_set_ecg(sample);
-    if (sample->result.rapid_change) {
+    if (sample->result.high_bpm_alert) {
         receiver_outputs_ecg_alert();
     }
 }

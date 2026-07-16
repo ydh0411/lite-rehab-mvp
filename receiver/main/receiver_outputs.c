@@ -2,6 +2,7 @@
 
 #include "driver/gpio.h"
 #include "driver/ledc.h"
+#include "ecg_alert_gate.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
@@ -11,6 +12,7 @@
 
 static QueueHandle_t feedback_queue;
 static bool is_connected;
+static ecg_alert_gate_t ecg_alert_gate;
 
 typedef enum {
     OUTPUT_EVENT_MOTION_SUCCESS,
@@ -43,6 +45,7 @@ static void feedback_task(void *arg)
                     tone(1000, 50);
                     vTaskDelay(pdMS_TO_TICKS(50));
                 }
+                ecg_alert_gate_release(&ecg_alert_gate);
             }
         } else if (!is_connected) {
             gpio_set_level(LED_GPIO, !gpio_get_level(LED_GPIO));
@@ -77,6 +80,7 @@ esp_err_t receiver_outputs_init(void)
     ESP_ERROR_CHECK(ledc_channel_config(&channel));
     feedback_queue = xQueueCreate(8, sizeof(output_event_t));
     if (feedback_queue == NULL) return ESP_ERR_NO_MEM;
+    ecg_alert_gate_init(&ecg_alert_gate);
     xTaskCreate(feedback_task, "feedback", 3072, NULL, 4, NULL);
     return ESP_OK;
 }
@@ -100,6 +104,9 @@ void receiver_outputs_feedback(feedback_event_t event)
 void receiver_outputs_ecg_alert(void)
 {
     if (feedback_queue == NULL) return;
+    if (!ecg_alert_gate_try_acquire(&ecg_alert_gate)) return;
     const output_event_t output = OUTPUT_EVENT_ECG_RAPID;
-    (void)xQueueSend(feedback_queue, &output, 0);
+    if (xQueueSend(feedback_queue, &output, 0) != pdTRUE) {
+        ecg_alert_gate_release(&ecg_alert_gate);
+    }
 }
