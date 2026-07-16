@@ -25,6 +25,34 @@ export type LiveSnapshot = {
   camera_frame_age_s: number | null
 }
 
+export type SeriesPoint = {
+  t_s: number
+  value: number
+}
+
+export type SessionSummary = {
+  session_id: string
+  subject: string
+  started_at: string
+  duration_s: number | null
+  repetitions: number
+  exercises: readonly string[]
+  good_form_percent: number | null
+  max_rom_deg: number | null
+  serial_completeness_percent: number
+  pose_completeness_percent: number
+  ecg_completeness_percent: number | null
+  warnings: readonly string[]
+}
+
+export type SessionReport = SessionSummary & {
+  quality_counts: Record<string, number>
+  average_bpm: number | null
+  repetition_series: readonly SeriesPoint[]
+  rom_series: readonly SeriesPoint[]
+  bpm_series: readonly SeriesPoint[]
+}
+
 export async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     headers: { "Content-Type": "application/json", ...init?.headers },
