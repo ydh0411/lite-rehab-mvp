@@ -296,7 +296,7 @@ PYTHONPATH=python python scripts/probe_cameras.py
 - **过快动作**：快速甩动手臂 → 接收端 OLED 显示 `FAST` + 两声低音
 - **幅度不足**：小幅度晃动 → 接收端 OLED 显示 `RANGE` + 两声低音
 - **躯干代偿**：弯曲时倾斜身体 → Dashboard 提示 `Avoid trunk compensation`
-- **ECG**：Dashboard 显示连续波形和 BPM；同学逻辑检测到相邻 BPM 相差大于 20 时蜂鸣器快速提示五次。该提示只用于展示，不改变动作识别或质量反馈。
+- **ECG**：Dashboard 显示连续波形和滤波 BPM；BPM 连续 3 次高于 150 时蜂鸣器快速提示五次且只触发一次，连续 3 次降至 140 或以下后重新允许报警。该课堂演示规则未经医学验证，也不改变动作识别或质量反馈。
 
 ### 步骤 6：展示数据记录
 
@@ -308,7 +308,7 @@ head -5 sessions/demo.csv
 
 主会话 CSV 包含设备/接收时间、六轴 IMU、状态、次数、质量、视觉角度/速度/可见度、模型输出、subject 和人工标签。每条 IMU 都会记录，视觉缺失显式保留。
 
-同目录还会生成 `<主文件名>_ecg.csv`，字段为 `t_ms,received_s,raw_adc,bpm,leads_connected,beat,rapid_change`。ECG 文件仅用于波形展示和后续分析，不进入当前 CNN、重复计数或动作质量决策。
+同目录还会生成 `<主文件名>_ecg.csv`，字段为 `t_ms,received_s,raw_adc,bpm,leads_connected,beat,high_bpm_alert`。ECG 文件仅用于波形展示和后续分析，不进入当前 CNN、重复计数或动作质量决策。
 
 ---
 

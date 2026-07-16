@@ -159,4 +159,4 @@ in [`maixcam2/README.md`](maixcam2/README.md). / MaixCAM 2 只提供视频，与
 3. With ECG electrodes detached it shows `ECG LEADS OFF`; after attachment and threshold crossings it shows BPM.
 4. ESP32-S3 LED blinks while scanning and stays on after connection.
 5. A valid repetition produces one high beep; a fast or short-range movement produces two low warning tones.
-6. A teammate-defined BPM change greater than 20 triggers five rapid pulses. This is a demo alert, not a clinical alarm.
+6. Filtered BPM above 150 for three consecutive valid measurements triggers one five-pulse alert. It rearms after three filtered values at or below 140 BPM. This classroom demo rule is not medically validated.

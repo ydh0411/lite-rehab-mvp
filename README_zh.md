@@ -208,7 +208,7 @@ PYTHON=python ./scripts/start_maixcam2_demo.sh \
 | 质量 | `insufficient_range` | 积分角度范围低于阈值 | 两声警告音，次数不增加 |
 | 视觉 | `trunk_compensation` | 肩部相对髋部的偏移超过视觉阈值 | Dashboard 安全提示 |
 | ECG | 导联断开 | CJMCU `LO+` 或 `LO-` 为高 | OLED/Dashboard 显示 `LEADS OFF`，不作 ECG 心跳判断 |
-| ECG | BPM 变化 `> 20` | 同学逻辑中连续 BPM 的差值 | 五次快速演示提示；不改变动作反馈 |
+| ECG | 滤波 BPM 连续 3 次 `> 150` | 最近有效 RR 间隔中位数持续偏高 | 发出一次五连响；连续 3 次降至 140 BPM 或以下后重新允许报警；不改变动作反馈 |
 
 ### Dashboard 按键
 
@@ -256,7 +256,7 @@ PYTHONPATH=python python python/run_dashboard.py --help
 
 如果 50 ms 同步容差内没有姿态样本，姿态值填 0，`vision_valid` 为 `0.0`。`t_ms` 保留佩戴端时间戳，`received_s` 是用于跨设备匹配的电脑单调时钟接收时间。
 
-独立 `<session>_ecg.csv` 以最高 100 Hz 保存 `t_ms`、`received_s`、`raw_adc`、`bpm`、`leads_connected`、`beat` 和 `rapid_change`。分开记录可保持原 IMU/姿态训练 schema 不变。ECG 只显示和记录，不传入 CNN、次数逻辑、质量规则或反馈融合。
+独立 `<session>_ecg.csv` 以最高 100 Hz 保存 `t_ms`、`received_s`、`raw_adc`、`bpm`、`leads_connected`、`beat` 和 `high_bpm_alert`。ECG 演示报警仅在滤波后的 BPM 连续 3 次高于 150 时触发一次；连续 3 次降至 140 BPM 或以下后才重新允许报警。该课堂演示规则未经医学验证。分开记录可保持原 IMU/姿态训练 schema 不变；ECG 不传入 CNN、次数逻辑、质量规则或反馈融合。
 
 ## 仓库结构
 

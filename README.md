@@ -215,7 +215,7 @@ provide diagnosis, treatment advice, or a validated rehabilitation score.
 | Quality | `insufficient_range` | Integrated angular range below threshold | Two low warning tones; repetition is not incremented |
 | Vision | `trunk_compensation` | Shoulder movement relative to the hip exceeds the visual threshold | Dashboard safety warning |
 | ECG | leads disconnected | Either CJMCU `LO+` or `LO-` is high | OLED/dashboard `LEADS OFF`; no ECG beat decision |
-| ECG | BPM change `> 20` | Teammate-defined difference between consecutive BPM values | Five rapid demo pulses; does not affect motion feedback |
+| ECG | Filtered BPM `> 150` three times | Median-filtered BPM remains high for three consecutive valid measurements | One five-pulse demo alert until rearmed by three values at or below 140 BPM; does not affect motion feedback |
 
 ### Dashboard controls
 
@@ -263,7 +263,7 @@ The current dashboard writes 27 columns. They are grouped below by purpose:
 
 If no pose lies within the 50 ms synchronization tolerance, pose values are zero-filled and `vision_valid` is `0.0`. The wearable timestamp remains in `t_ms`; `received_s` is the host monotonic receive time used for cross-device association.
 
-The companion `<session>_ecg.csv` contains `t_ms`, `received_s`, `raw_adc`, `bpm`, `leads_connected`, `beat`, and `rapid_change` at up to 100 Hz. Keeping this separate preserves the existing IMU/pose training schema. ECG is visualized and recorded only; it is not passed to the CNN, repetition logic, quality rules, or feedback fusion.
+The companion `<session>_ecg.csv` contains `t_ms`, `received_s`, `raw_adc`, `bpm`, `leads_connected`, `beat`, and `high_bpm_alert` at up to 100 Hz. The ECG demo alert fires once only after filtered BPM remains above 150 for three consecutive valid measurements, and rearms after three filtered measurements at or below 140 BPM. This classroom alert is not medically validated. Keeping ECG separate preserves the existing IMU/pose training schema; it is not passed to the CNN, repetition logic, quality rules, or feedback fusion.
 
 ## Repository structure
 
