@@ -173,6 +173,26 @@ PYTHON=python ./scripts/start_maixcam2_demo.sh \
 
 如果 MaixVision 打印的地址不同，请使用该准确地址。使用 UVC 时，将 RTSP URL 换成探测到的数字相机编号。
 
+### 6. 启动本地网页应用
+
+演示版界面完全在笔记本本地运行，并自动用默认浏览器打开。首次启动会在需要时安装并构建 React 前端，之后直接复用本地构建结果。
+
+```bash
+# RTSP 摄像头
+./scripts/start_web_demo.sh rtsp://10.203.102.1:8554/live
+
+# UVC 摄像头编号
+./scripts/start_web_demo.sh 2
+```
+
+网页地址为 `http://127.0.0.1:8000`，包含**实时训练**、**历史记录**和可打印的**单次报告**。按 `Ctrl+C` 停止服务；系统不需要账号、互联网或云数据库。若只想在不连接硬件、不打开浏览器的情况下检查网页栈：
+
+```bash
+./scripts/start_web_demo.sh --fixture --headless-smoke-test --no-browser
+```
+
+报告页的 **Print / Save PDF** 按钮调用浏览器打印，可在本地保存 PDF。报告只汇总已记录的工程演示数据，不提供诊断、治疗建议或经过验证的康复评分。
+
 ## 操作与输出
 
 ### 动作状态与反馈

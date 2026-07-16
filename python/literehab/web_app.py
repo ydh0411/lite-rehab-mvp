@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import Iterator
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
 from .session_repository import SessionRepository
@@ -111,5 +112,22 @@ def create_app(
             media_type="multipart/x-mixed-replace; boundary=frame",
         )
 
-    return app
+    if frontend_dir is not None:
+        frontend_dir = Path(frontend_dir)
+        assets_dir = frontend_dir / "assets"
+        if assets_dir.is_dir():
+            app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
+        @app.get("/{full_path:path}", include_in_schema=False)
+        def frontend(full_path: str) -> FileResponse:
+            if full_path == "api" or full_path.startswith("api/"):
+                raise HTTPException(status_code=404, detail="API route not found")
+            index = frontend_dir / "index.html"
+            if not index.is_file():
+                raise HTTPException(
+                    status_code=503,
+                    detail="Web frontend has not been built",
+                )
+            return FileResponse(index)
+
+    return app

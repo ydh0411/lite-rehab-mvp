@@ -184,6 +184,28 @@ python -c "import mediapipe as mp; print('MediaPipe OK')"
 
 ## 四、启动 Dashboard
 
+课堂展示优先使用本地网页界面；原 OpenCV Dashboard 仍保留，便于回退和调试。
+
+### 4.0 本地网页界面（课堂展示推荐）
+
+```bash
+cd lite_rehab_mvp
+
+# MaixCAM2 RTSP
+./scripts/start_web_demo.sh rtsp://10.203.102.1:8554/live
+
+# 或 MaixCAM2 UVC 编号
+./scripts/start_web_demo.sh <maixcam-index>
+```
+
+脚本会检查 `web/dist`，只在前端源码更新或尚未构建时运行 Vite 构建，然后启动 `http://127.0.0.1:8000` 并打开浏览器。
+
+- **Live Training**：摄像头骨架、动作、次数、ROM、实时反馈、ECG 与硬件状态
+- **Session History**：按参与者和动作筛选本机 CSV 会话
+- **Session Report**：次数、动作质量、ROM、BPM 与数据完整性；可通过浏览器打印为 PDF
+
+网页关闭不等于停止采集。演示结束后回到终端按 `Ctrl+C`，运行时会关闭串口、摄像头和正在写入的文件。网页与报告均为工程原型，不用于临床判断。
+
 ### 4.1 MaixCAM 2 UVC 启动（推荐）
 
 ```bash

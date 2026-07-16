@@ -47,7 +47,7 @@
 - Produces: `SessionRepository(root: Path)`, `SessionSummary`, `SessionReport`, `list_sessions() -> list[SessionSummary]`, and `get_report(session_id: str) -> SessionReport`.
 - Consumes: the existing `SESSION_FIELDS` CSV and `<stem>_ecg.csv` companion format.
 
-- [ ] **Step 1: Write failing tests for reproducible metrics**
+- [x] **Step 1: Write failing tests for reproducible metrics**
 
 ```python
 def test_report_derives_events_without_counting_repeated_rows(tmp_path):
@@ -65,13 +65,13 @@ def test_report_derives_events_without_counting_repeated_rows(tmp_path):
     assert report.max_rom_deg == 60.0
 ```
 
-- [ ] **Step 2: Run the focused test and verify the missing-module failure**
+- [x] **Step 2: Run the focused test and verify the missing-module failure**
 
 Run: `PYTHONPATH=python pytest python/tests/test_session_repository.py -q`
 
 Expected: collection fails with `ModuleNotFoundError: literehab.session_repository`.
 
-- [ ] **Step 3: Implement defensive CSV discovery and metric derivation**
+- [x] **Step 3: Implement defensive CSV discovery and metric derivation**
 
 ```python
 class SessionRepository:
@@ -96,13 +96,13 @@ valid-pose intervals, connected positive BPM averaging, and separate pose/ECG
 completeness. Invalid cells add data-quality warnings and yield `None` for
 unreliable metrics.
 
-- [ ] **Step 4: Run repository tests**
+- [x] **Step 4: Run repository tests**
 
 Run: `PYTHONPATH=python pytest python/tests/test_session_repository.py -q`
 
 Expected: all repository tests pass.
 
-- [ ] **Step 5: Commit the repository unit**
+- [x] **Step 5: Commit the repository unit**
 
 ```bash
 git add python/literehab/session_repository.py python/tests/test_session_repository.py
@@ -123,7 +123,7 @@ git commit -m "feat: derive local session reports"
 - Consumes: `SessionRepository` from Task 1.
 - Produces: `LiveSnapshot.to_dict()`, `RuntimeProtocol`, `FixtureRuntime`, and `create_app(runtime, sessions_dir, frontend_dir=None) -> FastAPI`.
 
-- [ ] **Step 1: Add failing contract tests**
+- [x] **Step 1: Add failing contract tests**
 
 ```python
 def test_live_snapshot_distinguishes_unavailable_values():
@@ -141,13 +141,13 @@ def test_api_lists_sessions_and_controls_runtime(tmp_path):
     assert runtime.recording is True
 ```
 
-- [ ] **Step 2: Run tests and verify missing symbols**
+- [x] **Step 2: Run tests and verify missing symbols**
 
 Run: `PYTHONPATH=python pytest python/tests/test_web_runtime.py python/tests/test_web_app.py -q`
 
 Expected: import failures for `web_models`, `web_runtime`, and `web_app`.
 
-- [ ] **Step 3: Add exact backend dependencies**
+- [x] **Step 3: Add exact backend dependencies**
 
 Append to `python/requirements.txt`:
 
@@ -157,7 +157,7 @@ uvicorn[standard]>=0.35,<1
 httpx>=0.28,<1
 ```
 
-- [ ] **Step 4: Implement runtime protocol and bounded fixture state**
+- [x] **Step 4: Implement runtime protocol and bounded fixture state**
 
 ```python
 class RuntimeProtocol(Protocol):
@@ -176,7 +176,7 @@ class FixtureRuntime:
         self._snapshot = LiveSnapshot.initial()
 ```
 
-- [ ] **Step 5: Implement API routes and streams**
+- [x] **Step 5: Implement API routes and streams**
 
 ```python
 @app.get("/api/sessions")
@@ -197,13 +197,13 @@ async def live(socket: WebSocket) -> None:
 Add exact 404 mapping for unknown reports, 409 mapping for invalid session
 transitions, subject trimming/length validation, and a multipart MJPEG response.
 
-- [ ] **Step 6: Run backend contract tests**
+- [x] **Step 6: Run backend contract tests**
 
 Run: `PYTHONPATH=python pytest python/tests/test_session_repository.py python/tests/test_web_runtime.py python/tests/test_web_app.py -q`
 
 Expected: all tests pass.
 
-- [ ] **Step 7: Commit the API unit**
+- [x] **Step 7: Commit the API unit**
 
 ```bash
 git add python/requirements.txt python/literehab/web_models.py python/literehab/web_runtime.py python/literehab/web_app.py python/tests/test_web_runtime.py python/tests/test_web_app.py
@@ -222,7 +222,7 @@ git commit -m "feat: add local dashboard API"
 - Consumes: REST paths under `/api` from Task 2.
 - Produces: route shell for `/`, `/history`, and `/reports/:sessionId`; shared `StatusPill`, `Metric`, `EmptyState`, and `PageHeader` components.
 
-- [ ] **Step 1: Scaffold Vite dependencies and failing navigation test**
+- [x] **Step 1: Scaffold Vite dependencies and failing navigation test**
 
 ```tsx
 it("renders the three product destinations", () => {
@@ -233,13 +233,13 @@ it("renders the three product destinations", () => {
 })
 ```
 
-- [ ] **Step 2: Run the frontend test and verify failure**
+- [x] **Step 2: Run the frontend test and verify failure**
 
 Run: `cd web && npm install && npm test -- --run`
 
 Expected: failure because `App` and the shell do not exist.
 
-- [ ] **Step 3: Implement the restrained application shell**
+- [x] **Step 3: Implement the restrained application shell**
 
 ```tsx
 const navigation = [
@@ -253,13 +253,13 @@ and muted text. Use an 80px collapsed/224px expanded rail, 1px borders, 10px
 card radius, tabular numerals, no gradients, and no shadow stronger than
 `0 1px 2px rgb(15 23 42 / 0.06)`.
 
-- [ ] **Step 4: Run shell tests and production build**
+- [x] **Step 4: Run shell tests and production build**
 
 Run: `cd web && npm test -- --run && npm run build`
 
 Expected: tests pass and `web/dist/index.html` is generated.
 
-- [ ] **Step 5: Commit the frontend foundation**
+- [x] **Step 5: Commit the frontend foundation**
 
 ```bash
 git add web
@@ -280,7 +280,7 @@ git commit -m "feat: add rehabilitation web shell"
 - Consumes: WebSocket `/api/live`, camera `/api/camera.mjpg`, and session command endpoints.
 - Produces: complete no-scroll live view and `appendBounded<T>(items, item, limit)`.
 
-- [ ] **Step 1: Write failing state and buffer tests**
+- [x] **Step 1: Write failing state and buffer tests**
 
 ```tsx
 it("shows unavailable ECG without inventing zero BPM", () => {
@@ -294,13 +294,13 @@ it("bounds live samples", () => {
 })
 ```
 
-- [ ] **Step 2: Run focused tests and verify failure**
+- [x] **Step 2: Run focused tests and verify failure**
 
 Run: `cd web && npm test -- --run src/features/live`
 
 Expected: missing component/helper failures.
 
-- [ ] **Step 3: Implement reconnecting live state and command actions**
+- [x] **Step 3: Implement reconnecting live state and command actions**
 
 ```ts
 export function appendBounded<T>(items: T[], item: T, limit: number): T[] {
@@ -312,13 +312,13 @@ The page grid is camera `minmax(0, 1fr)`, metrics `280px`, and ECG `150px`
 high. Use semantic status text plus icons. Start session requires a participant
 ID; stop asks for confirmation; baseline and range controls remain secondary.
 
-- [ ] **Step 4: Run live tests and build**
+- [x] **Step 4: Run live tests and build**
 
 Run: `cd web && npm test -- --run src/features/live && npm run build`
 
 Expected: tests and build pass.
 
-- [ ] **Step 5: Commit the live page**
+- [x] **Step 5: Commit the live page**
 
 ```bash
 git add web/src/app/useLiveSnapshot.ts web/src/features/live
@@ -340,7 +340,7 @@ git commit -m "feat: add live rehabilitation view"
 - Consumes: `GET /api/sessions` and `GET /api/sessions/:sessionId`.
 - Produces: searchable session table, report route, and print/PDF stylesheet.
 
-- [ ] **Step 1: Write failing history and report tests**
+- [x] **Step 1: Write failing history and report tests**
 
 ```tsx
 it("filters sessions by participant and exercise", () => {
@@ -355,13 +355,13 @@ it("prints the prototype disclaimer and unavailable values", () => {
 })
 ```
 
-- [ ] **Step 2: Run focused tests and verify failure**
+- [x] **Step 2: Run focused tests and verify failure**
 
 Run: `cd web && npm test -- --run src/features/history src/features/report`
 
 Expected: missing feature failures.
 
-- [ ] **Step 3: Implement real filtering, completeness, charts, and print CSS**
+- [x] **Step 3: Implement real filtering, completeness, charts, and print CSS**
 
 ```css
 @media print {
@@ -377,13 +377,13 @@ a four-column summary strip for the report, and larger chart panels only where
 time-series shape matters. Render missing values as `Not available` with a
 data-quality explanation.
 
-- [ ] **Step 4: Run feature tests and build**
+- [x] **Step 4: Run feature tests and build**
 
 Run: `cd web && npm test -- --run src/features/history src/features/report && npm run build`
 
 Expected: tests and build pass.
 
-- [ ] **Step 5: Commit history and reports**
+- [x] **Step 5: Commit history and reports**
 
 ```bash
 git add web/src/features/history web/src/features/report web/src/styles.css
@@ -401,7 +401,7 @@ git commit -m "feat: add session history and reports"
 - Consumes: existing `SerialReader`, `OptionalCNN`, camera, pose, synchronization, fusion, dashboard state, and CSV field definitions.
 - Produces: `LiteRehabRuntime(RuntimeProtocol)` with `start()`, `close()`, command methods, immutable snapshots, and JPEG frames.
 
-- [ ] **Step 1: Write failing lifecycle and command tests with injected fakes**
+- [x] **Step 1: Write failing lifecycle and command tests with injected fakes**
 
 ```python
 def test_session_commands_open_and_close_both_csv_files(tmp_path):
@@ -413,13 +413,13 @@ def test_session_commands_open_and_close_both_csv_files(tmp_path):
     assert len(list(tmp_path.glob("*.csv"))) == 2
 ```
 
-- [ ] **Step 2: Run runtime tests and verify failure**
+- [x] **Step 2: Run runtime tests and verify failure**
 
 Run: `PYTHONPATH=python pytest python/tests/test_real_web_runtime.py -q`
 
 Expected: `LiteRehabRuntime` or injected source interfaces are missing.
 
-- [ ] **Step 3: Extract orchestration behind the runtime boundary**
+- [x] **Step 3: Extract orchestration behind the runtime boundary**
 
 ```python
 @dataclass(frozen=True)
@@ -438,13 +438,13 @@ deques, and an event for shutdown. Open CSV writers only during a session.
 Reuse existing algorithms and parsing; do not duplicate feedback rules in the
 web layer. `run_dashboard.py` keeps its CLI and current OpenCV behavior.
 
-- [ ] **Step 4: Run runtime and existing dashboard tests**
+- [x] **Step 4: Run runtime and existing dashboard tests**
 
 Run: `PYTHONPATH=python pytest python/tests/test_real_web_runtime.py python/tests/test_dashboard_cli.py python/tests/test_dashboard_state.py -q`
 
 Expected: all tests pass.
 
-- [ ] **Step 5: Commit real runtime integration**
+- [x] **Step 5: Commit real runtime integration**
 
 ```bash
 git add python/literehab/web_runtime.py python/run_dashboard.py python/tests/test_real_web_runtime.py
@@ -466,7 +466,7 @@ git commit -m "feat: connect web dashboard to LiteRehab runtime"
 - Consumes: `create_app`, `LiteRehabRuntime`, and `web/dist`.
 - Produces: one-command offline demo and documented fallback behavior.
 
-- [ ] **Step 1: Write failing launcher/static-hosting test**
+- [x] **Step 1: Write failing launcher/static-hosting test**
 
 ```python
 def test_built_frontend_falls_back_to_spa_routes(tmp_path):
@@ -475,13 +475,13 @@ def test_built_frontend_falls_back_to_spa_routes(tmp_path):
     assert "LiteRehab" in client.get("/history").text
 ```
 
-- [ ] **Step 2: Run the launcher test and verify failure**
+- [x] **Step 2: Run the launcher test and verify failure**
 
 Run: `PYTHONPATH=python pytest python/tests/test_web_app.py -q`
 
 Expected: `/history` returns 404 before SPA fallback is added.
 
-- [ ] **Step 3: Implement launcher and start script**
+- [x] **Step 3: Implement launcher and start script**
 
 ```python
 def main() -> None:
@@ -497,12 +497,12 @@ def main() -> None:
 than `web/src`, sets `PYTHONPATH=python`, and executes the launcher with the
 same port, camera source, side, and model defaults as the existing demo script.
 
-- [ ] **Step 4: Document offline startup and safety boundaries**
+- [x] **Step 4: Document offline startup and safety boundaries**
 
 Add exact install, build, start, navigation, browser-print, IMU-only fallback,
 and shutdown commands to English and Chinese READMEs and the demo guide.
 
-- [ ] **Step 5: Run complete verification**
+- [x] **Step 5: Run complete verification**
 
 Run:
 
@@ -516,7 +516,7 @@ PYTHONPATH=python python python/run_web_dashboard.py --fixture --headless-smoke-
 Expected: C tests, all Python tests, all frontend tests, frontend build, and the
 headless web smoke test pass.
 
-- [ ] **Step 6: Commit launcher and documentation**
+- [x] **Step 6: Commit launcher and documentation**
 
 ```bash
 git add python/run_web_dashboard.py scripts/start_web_demo.sh README.md README_zh.md DEMO_GUIDE.md .gitignore python/tests/test_web_app.py

@@ -67,3 +67,25 @@ def test_unknown_report_returns_not_found(tmp_path):
 
     assert response.status_code == 404
 
+
+def test_built_frontend_falls_back_to_spa_routes(tmp_path):
+    frontend = tmp_path / "frontend"
+    frontend.mkdir()
+    (frontend / "index.html").write_text("<main>LiteRehab local app</main>")
+    client = TestClient(create_app(FixtureRuntime(), tmp_path, frontend))
+
+    response = client.get("/history")
+
+    assert response.status_code == 200
+    assert "LiteRehab local app" in response.text
+
+
+def test_unknown_api_route_never_returns_frontend(tmp_path):
+    frontend = tmp_path / "frontend"
+    frontend.mkdir()
+    (frontend / "index.html").write_text("<main>LiteRehab local app</main>")
+    client = TestClient(create_app(FixtureRuntime(), tmp_path, frontend))
+
+    response = client.get("/api/unknown")
+
+    assert response.status_code == 404

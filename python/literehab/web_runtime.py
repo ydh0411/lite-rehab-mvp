@@ -566,3 +566,11 @@ class FixtureRuntime:
         self._snapshot = snapshot
         self.recording = snapshot.recording
         self.subject = snapshot.subject
+
+    def start(self) -> None:
+        return None
+
+    def close(self) -> None:
+        if self.recording:
+            self.recording = False
+            self._snapshot = replace(self._snapshot, recording=False)

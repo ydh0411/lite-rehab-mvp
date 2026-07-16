@@ -173,6 +173,33 @@ PYTHON=python ./scripts/start_maixcam2_demo.sh \
 
 Use the exact URL printed by MaixVision if its address differs. For UVC, pass the detected numeric camera index instead of an RTSP URL.
 
+### 6. Start the local web application
+
+The presentation-ready interface runs entirely on the laptop and opens in the
+default browser. The first launch installs/builds the React frontend when
+needed; later launches reuse the local build.
+
+```bash
+# RTSP camera
+./scripts/start_web_demo.sh rtsp://10.203.102.1:8554/live
+
+# UVC camera index
+./scripts/start_web_demo.sh 2
+```
+
+The web application is served at `http://127.0.0.1:8000` and contains **Live
+Training**, **Session History**, and a printable **Session Report**. Stop the
+server with `Ctrl+C`. No account, internet connection, or cloud database is
+used. To verify the web stack without hardware or opening a browser:
+
+```bash
+./scripts/start_web_demo.sh --fixture --headless-smoke-test --no-browser
+```
+
+Use the browser's **Print / Save PDF** action on a report page to create a
+local PDF. Reports summarize recorded engineering data only; they do not
+provide diagnosis, treatment advice, or a validated rehabilitation score.
+
 ## Operation and outputs
 
 ### Supported states and feedback
