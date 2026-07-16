@@ -35,13 +35,14 @@ LiteRehab Fusion is a BMEG3920 coursework and engineering prototype for upper-li
 | Wearable sensing | MYOSA ESP32 + MPU6050, sampled every 20 ms (50 Hz) | Implemented |
 | On-device motion logic | Filtering, adaptive thresholds, two exercise states, repetition count, and quality | Implemented |
 | Wireless link | 26-byte versioned BLE notification with CRC-16 | Implemented |
-| Receiver gateway | ESP32-S3 BLE central to USB serial telemetry | Implemented |
-| Physical feedback | Connection LED and passive buzzer success/warning patterns | Implemented |
+| Receiver gateway | ESP32-S3 BLE central plus CJMCU-8232 ADC sampling and USB serial telemetry | Implemented |
+| ECG sensing | CJMCU-8232 on GPIO4, sampled at 100 Hz with teammate-defined pulse/BPM-change logic | Implemented; demonstration only |
+| Receiver display and feedback | SSD1306 status display, connection LED, and queued motion/ECG buzzer patterns | Implemented |
 | Independent camera | MaixCAM2 RTSP over USB NCM by default; UVC optional | Implemented |
 | Desktop vision | MediaPipe pose landmarks and derived joint/trunk features | Implemented |
 | IMU model | Automatically loaded CNN-BiGRU checkpoint | Implemented |
 | Multimodal model | Dual-branch CNN-BiGRU code and training pipeline | Optional; no default fusion checkpoint |
-| Dashboard and logging | 1280×720 OpenCV interface and synchronized IMU/pose CSV | Implemented |
+| Dashboard and logging | 1280×720 interface, ECG waveform, synchronized IMU/pose CSV, and companion ECG CSV | Implemented |
 
 The firmware directly recognizes `forearm_rotation` and `elbow_flexion`. The shipped IMU checkpoint also contains `shoulder_abduction`, but that class is not a third firmware repetition state. The current model and dataset are classroom baselines, not clinical validation evidence.
 
@@ -50,28 +51,29 @@ The firmware directly recognizes `forearm_rotation` and `elbow_flexion`. The shi
 ```mermaid
 flowchart LR
     MPU["MPU6050<br/>50 Hz IMU"] --> WEAR["MYOSA ESP32 wearable<br/>filter + motion state machine"]
-    WEAR -->|"BLE: 26-byte packet"| RECV["ESP32-S3 receiver<br/>CRC + LED + buzzer"]
-    RECV -->|"USB serial CSV lines"| DASH["Python dashboard"]
+    WEAR -->|"BLE: 26-byte packet"| RECV["ESP32-S3 receiver<br/>CRC + OLED + LED + buzzer"]
+    ECG["CJMCU-8232<br/>100 Hz analog ECG"] --> RECV
+    RECV -->|"IMU + ECG serial records"| DASH["Python dashboard"]
     CAM["MaixCAM2"] -->|"RTSP over USB NCM<br/>or optional UVC"| DASH
     DASH --> POSE["MediaPipe pose<br/>angles + ROM + trunk motion"]
     DASH --> MODEL["IMU CNN-BiGRU<br/>optional multimodal model"]
     POSE --> FUSE["Rule/model decision<br/>live feedback"]
     MODEL --> FUSE
-    DASH --> LOG["Synchronized session CSV"]
+    DASH --> LOG["IMU/pose session CSV<br/>+ raw ECG companion CSV"]
 ```
 
 The MaixCAM2 only replaces the video source. Pose estimation, IMU inference, multimodal inference, rule/model resolution, dashboard rendering, and CSV recording remain on the host computer.
 
 ### Runtime sequence
 
-1. The wearable initializes I²C, finds the MPU6050/OLED, and calibrates gyroscope bias while stationary.
+1. The lightweight wearable initializes I²C, finds the MPU6050, tolerates the intentionally absent wearable OLED, and calibrates gyroscope bias while stationary.
 2. Every 20 ms it reads six-axis data, updates the motion state machine, finalizes a CRC-protected packet, and notifies the BLE receiver.
-3. The receiver validates each packet, reports sequence gaps, generates one physical feedback event per completed repetition, and prints normalized serial telemetry.
-4. The dashboard timestamps serial arrival and camera frames with the desktop monotonic clock.
+3. The receiver validates each packet, samples CJMCU-8232 GPIO4 at 100 Hz, updates the receiver OLED, serializes buzzer events, and prints separate `IMU,...` and `ECG,...` records.
+4. The dashboard timestamps IMU, ECG, and camera arrival with the desktop monotonic clock.
 5. MediaPipe extracts side-specific shoulder, elbow, wrist, and hip features when landmarks are visible.
 6. The synchronizer matches each IMU sample to the nearest pose sample within 50 ms; missing vision stays explicit.
 7. Rule warnings retain priority. A configured multimodal model may override normal rule output only when its confidence reaches the selected threshold.
-8. The interface renders the current state while every drained IMU sample is written to the session CSV.
+8. The interface renders motion plus a rolling ECG waveform. IMU/pose samples retain the existing session CSV schema, while raw ECG records go to `<session>_ecg.csv` and never enter motion decisions.
 
 ## Runnable projects
 
@@ -79,10 +81,10 @@ The repository contains five distinct runnable or buildable units:
 
 | Project | Language/runtime | Target | Main entry point | Purpose |
 |---|---|---|---|---|
-| Wearable firmware | C / ESP-IDF | MYOSA ESP32 (ESP32) | `wearable/main/app_main.c` | Read the MPU6050, classify motion, count repetitions, update OLED, and publish BLE packets |
-| Receiver firmware | C / ESP-IDF | ESP32-S3-DevKitC-1 | `receiver/main/app_main.c` | Receive/validate BLE packets, drive LED/buzzer, and forward USB serial telemetry |
-| Shared algorithms | Portable C17 | Host tests + both firmware projects | `shared/*.c` | Define the packet protocol, motion state machine, and one-shot feedback logic |
-| Desktop application | Python 3.12 | macOS/Linux/Windows host | `python/run_dashboard.py` | Read serial/video, estimate pose, run models, fuse feedback, render UI, and log CSV |
+| Wearable firmware | C / ESP-IDF | MYOSA ESP32 (ESP32) | `wearable/main/app_main.c` | Read MPU6050, classify motion, count repetitions, and publish BLE packets; optional OLED support remains |
+| Receiver firmware | C / ESP-IDF | ESP32-S3-DevKitC-1 | `receiver/main/app_main.c` | Receive BLE, sample ECG, update OLED/LED/buzzer, and forward IMU/ECG serial telemetry |
+| Shared algorithms | Portable C17 | Host tests + firmware | `shared/*.c` | Define packet, motion, feedback, and teammate-compatible ECG threshold logic |
+| Desktop application | Python 3.12 | macOS/Linux/Windows host | `python/run_dashboard.py` | Read IMU/ECG/video, render ECG and pose, run motion models, and write separate session/ECG CSVs |
 | Camera application | MaixPy | MaixCAM2 | `maixcam2/main.py` | Publish the built-in camera as RTSP or optional USB UVC |
 
 ## Quick start
@@ -95,20 +97,24 @@ Run commands from the repository root unless a section says otherwise.
 |---:|---|---|
 | 1 | MYOSA ESP32 WROOM-32E | Wearable controller and BLE peripheral |
 | 1 | MPU6050 | Six-axis forearm motion sensing |
-| 1 | SSD1306 128×64 OLED | Wearable state, repetition, quality, and BLE display |
+| 1 | SSD1306 128×64 OLED | Receiver BLE, ECG, repetition, and quality display |
 | 1 | ESP32-S3-DevKitC-1 N16R8 | BLE central and native-USB serial gateway |
+| 1 | CJMCU-8232 plus three-electrode cable/pads | Receiver-side single-lead ECG waveform |
+| 1 if needed | Four-pin JST-to-Dupont adapter | Connect the MYOSA OLED to receiver GPIO8/9/3V3/GND |
 | 1 each | LED, 220–330 Ω resistor, passive buzzer | Receiver connection and exercise feedback |
 | 1 | MaixCAM2 | Independent RTSP/UVC video source |
 | 2–3 | Data-capable USB cables | Power, flashing, serial, and camera networking |
 
 ```text
-Wearable I²C: MYOSA motherboard -> MPU6050 -> SSD1306 OLED
+Wearable I²C: MYOSA motherboard -> MPU6050 only; rigidly mount and restrain cable
 Receiver LED: GPIO2 -> 220–330 Ω -> LED -> GND
 Receiver buzzer: GPIO18 -> 100–330 Ω -> passive buzzer -> GND
+Receiver OLED: GPIO8 SDA, GPIO9 SCL, 3V3, GND
+Receiver ECG: GPIO4 OUTPUT, GPIO5 LO+, GPIO6 LO-, 3V3/GND, SDN -> 3V3
 Host: ESP32-S3 native USB and MaixCAM2 Type-C use separate data cables
 ```
 
-Disconnect power before wiring. Keep ESP32-S3 GPIO19/20 unused because the receiver uses native USB Serial/JTAG. See the [complete wiring guide](WIRING_GUIDE.md) before powering the boards.
+Disconnect power before wiring. Use 3.3 V for CJMCU-8232, keep GPIO19/20 for native USB, and do not use GPIO35–37 on the N16R8 board. See the [complete wiring guide](WIRING_GUIDE.md) before powering the boards or attaching electrodes.
 
 ### 2. Build and flash the ESP32 projects
 
@@ -174,13 +180,15 @@ Use the exact URL printed by MaixVision if its address differs. For UVC, pass th
 | Category | Internal value | Meaning | Output behavior |
 |---|---|---|---|
 | Motion | `idle` | No active repetition | Ready state |
-| Motion | `forearm_rotation` | Forearm pronation/supination-like rotation | OLED `ROTATE` |
-| Motion | `elbow_flexion` | Elbow flexion/extension-like cycle | OLED `ELBOW` |
+| Motion | `forearm_rotation` | Forearm pronation/supination-like rotation | Receiver OLED `ROTATE` |
+| Motion | `elbow_flexion` | Elbow flexion/extension-like cycle | Receiver OLED `ELBOW` |
 | Quality | `none` | No completed quality result | No tone |
 | Quality | `ok` | Completed with sufficient range and acceptable speed | One 880 Hz success tone |
 | Quality | `too_fast` | Duration too short or peak speed too high | Two low warning tones |
 | Quality | `insufficient_range` | Integrated angular range below threshold | Two low warning tones; repetition is not incremented |
 | Vision | `trunk_compensation` | Shoulder movement relative to the hip exceeds the visual threshold | Dashboard safety warning |
+| ECG | leads disconnected | Either CJMCU `LO+` or `LO-` is high | OLED/dashboard `LEADS OFF`; no ECG beat decision |
+| ECG | BPM change `> 20` | Teammate-defined difference between consecutive BPM values | Five rapid demo pulses; does not affect motion feedback |
 
 ### Dashboard controls
 
@@ -201,7 +209,7 @@ PYTHONPATH=python python python/run_dashboard.py --help
 | `--port` | `auto` | Receiver serial port; auto-selection prefers `usbmodem`, then `usbserial` |
 | `--camera` | `0` | Legacy local-camera index |
 | `--camera-source` | unset | Preferred camera input: `auto`, a non-negative index, or an `rtsp://` URL |
-| `--output` | `sessions/session.csv` | Session CSV path relative to the current working directory |
+| `--output` | `sessions/session.csv` | IMU/pose session CSV; ECG is automatically written beside it as `session_ecg.csv` |
 | `--model` | `python/models/imu_cnnbigru.pt` | IMU checkpoint; a missing configured file stops startup clearly |
 | `--fusion-model` | unset | Optional synchronized IMU/pose checkpoint |
 | `--model-confidence` | `0.70` | Minimum multimodal confidence required before model output is selected |
@@ -228,6 +236,8 @@ The current dashboard writes 27 columns. They are grouped below by purpose:
 
 If no pose lies within the 50 ms synchronization tolerance, pose values are zero-filled and `vision_valid` is `0.0`. The wearable timestamp remains in `t_ms`; `received_s` is the host monotonic receive time used for cross-device association.
 
+The companion `<session>_ecg.csv` contains `t_ms`, `received_s`, `raw_adc`, `bpm`, `leads_connected`, `beat`, and `rapid_change` at up to 100 Hz. Keeping this separate preserves the existing IMU/pose training schema. ECG is visualized and recorded only; it is not passed to the CNN, repetition logic, quality rules, or feedback fusion.
+
 ## Repository structure
 
 Generated build output, caches, session recordings, and local model assets are shown for context but are not hand-maintained source.
@@ -241,12 +251,12 @@ lite_rehab_mvp/
 ├── wearable/                      ESP32 wearable firmware project
 │   ├── CMakeLists.txt
 │   ├── sdkconfig.defaults
-│   └── main/                      Sensor, OLED, BLE server, status, app entry
+│   └── main/                      MPU sensor, optional OLED, BLE server, app entry
 ├── receiver/                      ESP32-S3 receiver firmware project
 │   ├── CMakeLists.txt
 │   ├── sdkconfig.defaults
-│   └── main/                      BLE client, outputs, telemetry, app entry
-├── shared/                        Portable packet, motion, and feedback logic
+│   └── main/                      BLE, ECG ADC, OLED, outputs, telemetry, app entry
+├── shared/                        Portable packet, motion, feedback, and ECG logic
 ├── tests/                         Host-side C17 tests and test runner
 ├── python/
 │   ├── run_dashboard.py           Live desktop application
@@ -258,7 +268,7 @@ lite_rehab_mvp/
 │   ├── tests/                     Python test suite
 │   ├── data/imu_public_small/     Tracked 7,600-sample public subset
 │   ├── models/                    Local model/task files (gitignored)
-│   └── sessions/                  Runtime CSV output (gitignored)
+│   └── sessions/                  Runtime IMU/pose and *_ecg CSV output (gitignored)
 ├── maixcam2/                      MaixPy RTSP/UVC application and setup guide
 ├── scripts/                       Build, flash, launch, probe, and test helpers
 ├── docs/                          Pitch copy and design/implementation records
@@ -274,7 +284,7 @@ The local `.worktrees/`, `wearable/build/`, `receiver/build/`, `tests/build/`, `
 
 | File | Content and responsibility | Typical use |
 |---|---|---|
-| `python/run_dashboard.py` | Main orchestration loop: serial reader thread, camera input, MediaPipe compatibility, pose extraction, synchronization, IMU/fusion inference, feedback resolution, OpenCV UI, keyboard handling, and CSV output | `PYTHONPATH=python python python/run_dashboard.py ...` |
+| `python/run_dashboard.py` | Main loop: independent IMU/ECG queues, camera and pose, synchronization, motion inference, ECG companion logging, OpenCV UI, and cleanup | `PYTHONPATH=python python python/run_dashboard.py ...` |
 | `python/collect_data.py` | Records a fixed-duration, single-label IMU CSV from the receiver; chooses a serial port and stores subject/label metadata | Run from `python/` or pass an explicit output path |
 | `python/prepare_public_imu.py` | Converts the source Apple Watch CSV to a bounded right-wrist subset; maps three motion labels, downsamples to 50 Hz, and converts rad/s to deg/s | Rebuild `python/data/imu_public_small/` from the cited public dataset |
 | `python/train_1d_cnn.py` | Loads labeled recordings, creates 100-sample windows with stride 50, performs subject-held-out training, and saves either `cnn_1d` or `cnn_bigru` checkpoints | Train/retrain the IMU classifier |
@@ -290,14 +300,14 @@ The local `.worktrees/`, `wearable/build/`, `receiver/build/`, `tests/build/`, `
 | `camera_source.py` | Validates `auto`/index/RTSP sources, probes local cameras, applies low-latency capture settings, tracks health, rate-limits reconnects, and releases OpenCV resources |
 | `cnn.py` | Constructs the six-channel IMU `cnn_1d` and three-convolution CNN-BiGRU architectures |
 | `dashboard_state.py` | Defines CSV fields, confidence-gated rule/model resolution, rule-warning priority, camera health tracking, trunk-compensation gating, and synchronized row construction |
-| `dashboard_view.py` | Converts internal state to human-readable labels/colors and renders the fixed 1280×720 dashboard, feedback banner, status chips, metrics, and gyroscope chart |
+| `dashboard_view.py` | Renders the fixed 1280×720 dashboard, motion feedback/metrics, and rolling ECG waveform with BPM/lead status |
 | `dataset.py` | Creates fixed-length overlapping NumPy windows and validates input dimensions/parameters |
 | `fusion.py` | Applies feedback priority and returns `Fusion` or `IMU-only` mode with a user-facing coaching message |
 | `multimodal.py` | Defines pose schema, dual temporal CNN-BiGRU branches, checkpoint validation, rolling-window inference, visibility gating, and prediction dataclasses |
 | `pose_features.py` | Selects left/right MediaPipe landmarks, calculates joint angles, normalized wrist position, angular velocity, visibility, trunk displacement, and repetition-scoped ROM |
 | `pose_math.py` | Supplies geometry helpers for three-point angles and normalized trunk-compensation detection |
 | `synchronization.py` | Buffers received telemetry and pose features, associates the nearest pose within 50 ms, drains each IMU sample once, and preserves missing vision |
-| `telemetry.py` | Defines the validated telemetry dataclass and parses the receiver's 11-field `IMU,...` serial line |
+| `telemetry.py` | Validates the unchanged 11-field `IMU,...` line and separate 7-field `ECG,...` line |
 
 ### Models and data
 
@@ -306,7 +316,7 @@ The local `.worktrees/`, `wearable/build/`, `receiver/build/`, `tests/build/`, `
 | `python/models/imu_cnnbigru.pt` | Shipped classroom checkpoint: 100-sample, six-channel CNN-BiGRU with `elbow_flexion`, `forearm_rotation`, and `shoulder_abduction` labels |
 | `python/models/pose_landmarker_lite.task` | MediaPipe Tasks pose model used when the legacy `mp.solutions` API is unavailable |
 | `python/data/imu_public_small/*.csv` | Nine right-wrist recordings from three public participants and three movements; 7,600 data rows total |
-| `python/sessions/*.csv` | Local dashboard recordings; runtime output rather than training truth by default |
+| `python/sessions/*.csv` | IMU/pose sessions and matching `*_ecg.csv` waveform logs; runtime output rather than training truth by default |
 
 The public subset comes from the [Wearable sensors-based human activity recognition dataset](https://doi.org/10.17632/s86tdtmcc2.1), licensed CC BY 4.0. The dataset is intentionally small. The checkpoint is suitable for coursework demonstrations only and makes no generalization or clinical-accuracy claim.
 
@@ -315,9 +325,9 @@ The public subset comes from the [Wearable sensors-based human activity recognit
 | Test file | Coverage |
 |---|---|
 | `test_camera_source.py` | Source parsing, camera probing, capture settings, health, reconnect timing, RTSP, and cleanup |
-| `test_dashboard_cli.py` | CLI compatibility, port preference, default checkpoint, CNN warm-up/idle gate, clinical pose-overlay colors, smoke test, and renderer integration |
+| `test_dashboard_cli.py` | CLI compatibility, port preference, bounded queues, ECG companion path, checkpoint behavior, smoke test, and renderer integration |
 | `test_dashboard_state.py` | Confidence fallback, warning priority, camera failure recovery, trunk gating, and complete CSV rows |
-| `test_dashboard_view.py` | Display semantics, rounded cards, repetition/ROM/confidence visuals, feedback banner, fixed canvas rendering, chart input, and camera failure state |
+| `test_dashboard_view.py` | Display semantics, cards, feedback, fixed canvas, ECG waveform/lead status, and camera failure state |
 | `test_dataset.py` | Window length, overlap, and short recordings |
 | `test_fusion.py` | IMU-only fallback and feedback priority |
 | `test_maixcam2_script.py` | RTSP default and supported UVC server construction |
@@ -326,7 +336,7 @@ The public subset comes from the [Wearable sensors-based human activity recognit
 | `test_pose_math.py` | Joint-angle geometry and normalized trunk displacement |
 | `test_prepare_public_imu.py` | Label/unit/sample-rate conversion and bounded recording selection |
 | `test_synchronization.py` | Nearest pose matching, explicit missing vision, lossless drain, and shutdown flush |
-| `test_telemetry.py` | Valid serial parsing and malformed/unknown-state rejection |
+| `test_telemetry.py` | Valid IMU/ECG parsing and malformed/range/unknown-state rejection |
 | `test_train_multimodal.py` | Synchronized training schema and loadable checkpoint creation |
 
 ## C project reference
@@ -350,17 +360,19 @@ The wearable motion loop converts raw MPU6050 values with `16384 LSB/g` and `131
 
 ### Receiver firmware: `receiver/`
 
-Target: ESP32-S3-DevKitC-1 N16R8 (`esp32s3`). The component links the shared packet and feedback modules and requires NimBLE, NVS, GPIO, and LEDC.
+Target: ESP32-S3-DevKitC-1 N16R8 (`esp32s3`). The component links shared packet, feedback, and ECG logic and requires NimBLE, NVS, ADC1, I²C, GPIO, and LEDC.
 
 | File | Content and responsibility |
 |---|---|
 | `receiver/CMakeLists.txt` | Declares the `literehab_receiver` ESP-IDF project |
 | `receiver/sdkconfig.defaults` | Selects ESP32-S3, NimBLE central mode, MTU 64, 16 MB flash, octal PSRAM at 80 MHz, native USB console, and a 6144-byte main task stack |
-| `receiver/main/CMakeLists.txt` | Registers receiver sources plus shared `motion_packet.c` and `feedback_logic.c` |
-| `receiver/main/app_main.c` | Initializes output hardware and feedback state, reports BLE connection changes/packet gaps, and dispatches valid packets to feedback and serial output |
+| `receiver/main/CMakeLists.txt` | Registers receiver, shared ECG/packet/feedback, and reused SSD1306 sources plus ADC/I²C dependencies |
+| `receiver/main/app_main.c` | Initializes display/output/ECG/BLE and dispatches motion and ECG samples without mixing their decision paths |
 | `receiver/main/ble_client.c/.h` | Scans for `LiteRehab-Wear`, connects, exchanges MTU, discovers the custom service/characteristic, enables notifications, validates length/CRC, and reconnects after disconnection |
-| `receiver/main/receiver_outputs.c/.h` | Drives GPIO2 connection LED and GPIO18 LEDC buzzer from a FreeRTOS queue; maps success to one high tone and warning to two low tones |
-| `receiver/main/serial_telemetry.c/.h` | Converts raw packet values to g and deg/s and prints the stable `IMU,...` line consumed by Python |
+| `receiver/main/ecg_monitor.c/.h` | Samples CJMCU-8232 GPIO4 at 100 Hz, reads GPIO5/6 lead-off, and applies shared threshold logic |
+| `receiver/main/receiver_display.c/.h` | Drives receiver SSD1306 on GPIO8/9 from mutex-protected BLE/motion/ECG state at 5 Hz |
+| `receiver/main/receiver_outputs.c/.h` | Serializes motion and ECG buzzer patterns through one GPIO18 LEDC queue and drives GPIO2 LED |
+| `receiver/main/serial_telemetry.c/.h` | Prints stable unchanged `IMU,...` records plus separate `ECG,...` records |
 
 ### Shared portable C: `shared/`
 
@@ -372,6 +384,7 @@ Target: ESP32-S3-DevKitC-1 N16R8 (`esp32s3`). The component links the shared pac
 | `motion_logic.c` | Implements low-pass gyro filtering, complementary roll/pitch estimation, idle-only adaptive thresholds, axis/acceleration classification, reversal phases, range integration, speed/range quality, refractory time, and repetition counting |
 | `feedback_logic.h` | Defines `NONE`, `SUCCESS`, and `WARNING` receiver events plus transition state |
 | `feedback_logic.c` | Emits one event only when motion changes from active to idle, preventing a persistent quality value from repeatedly filling the buzzer queue |
+| `ecg_logic.h/.c` | Preserves threshold 2500, 250 ms refractory, `60000/delta`, and BPM difference `>20`; adds the required below-threshold latch release and lead-off reset |
 
 #### BLE packet layout
 
@@ -392,10 +405,11 @@ The CRC starts at `0xFFFF` and uses polynomial `0x1021`. Changing the packed lay
 
 | File | Coverage |
 |---|---|
-| `run_host_tests.sh` | Compiles portable code as C17 with `-Wall -Wextra -Werror`, links `-lm` for motion math, and runs all three binaries |
+| `run_host_tests.sh` | Compiles portable code as C17 with `-Wall -Wextra -Werror`, links math where needed, and runs all four binaries |
 | `test_motion_packet.c` | Packet size, finalize/validate, corruption rejection, and magic rejection |
 | `test_motion_logic.c` | Idle behavior, both exercise cycles, good/fast/short-range results, counts, and idle-only threshold adaptation |
 | `test_feedback_logic.c` | Exactly one success/warning event per active-to-idle completion |
+| `test_ecg_logic.c` | Fixed threshold, latch release, strict 250 ms refractory, BPM calculation, `>20` alert, and lead-off reset |
 
 ## Build and verification
 
@@ -421,7 +435,7 @@ PYTHONPATH=python python python/run_dashboard.py --headless-smoke-test
 PYTHON=python ./scripts/test_all.sh
 ```
 
-The current suite collects **78 Python tests** and runs **3 C host-test executables**, Python syntax checks, the dashboard checkpoint smoke test, and both ESP-IDF builds. Hardware-dependent BLE, camera transport, OLED, LED, and buzzer behavior still require the physical acceptance steps in [DEMO_GUIDE.md](DEMO_GUIDE.md).
+The current suite collects **91 Python tests** and runs **4 C host-test executables**, Python syntax checks, the dashboard checkpoint smoke test, and both ESP-IDF builds. Hardware-dependent BLE, camera transport, CJMCU-8232/electrodes, OLED, LED, and buzzer behavior still require the physical acceptance steps in [DEMO_GUIDE.md](DEMO_GUIDE.md).
 
 ### Helper scripts
 
@@ -438,8 +452,10 @@ The current suite collects **78 Python tests** and runs **3 C host-test executab
 
 | Symptom | Likely cause | Action |
 |---|---|---|
-| OLED shows `MPU ERROR` | MPU6050 not found | Power off and check the keyed JST chain; firmware accepts address `0x68` or `0x69` |
-| OLED stays at `BLE WAIT` | Receiver is off, not flashed, or not subscribed | Power/flash the receiver and keep boards within a few metres |
+| Receiver OLED is blank | GPIO8/9 or 3V3/GND order is wrong, or OLED is absent | Power off; verify labels/JST adapter and address `0x3C`; BLE/ECG continue without it |
+| Receiver OLED stays at `BLE WAIT` | Wearable is off, not flashed, or not subscribed | Power/flash the wearable and keep boards within a few metres |
+| `LEADS OFF` never clears | Electrode contact or CJMCU LO+/LO- wiring is wrong | Verify RA/LA/RL pads and GPIO5/6; clean/dry skin and remain still |
+| ECG waveform is flat/noisy | Wrong GPIO4 wiring, loose pads, long analog wire, or buzzer/USB coupling | Verify `OUTPUT -> GPIO4`, shorten/separate the analog wire, and keep still |
 | Receiver serial port is absent | Wrong ESP32-S3 USB connector or cable | Use the native port labelled `USB` and a data-capable cable |
 | ESP32-S3 flash fails | Native USB reset/baud instability | Close serial users, enter BOOT+RST download mode, and retry with `BAUD=115200` |
 | Dashboard says no serial port | Receiver disconnected or port occupied | Close `idf.py monitor`/other serial tools and pass `--port` explicitly |
@@ -463,4 +479,4 @@ The current suite collects **78 Python tests** and runs **3 C host-test executab
 
 This repository is an engineering demonstration. It is not intended for diagnosis, treatment prescription, clinical scoring, fall prevention, or unsupervised rehabilitation decisions. The small public-data model has not been clinically validated. A physiotherapist or other qualified professional remains responsible for exercise selection and supervision.
 
-Stop immediately if a participant experiences pain, dizziness, numbness, loss of balance, unusual fatigue, or any other discomfort. Do not use loose wiring, reverse JST connectors, connect 5 V to a GPIO, or drive a buzzer of unknown current directly from the ESP32-S3.
+Stop immediately if a participant experiences pain, dizziness, numbness, loss of balance, unusual fatigue, or any other discomfort. While ECG electrodes touch a person, disconnect the laptop mains charger and operate it from battery. Do not use loose wiring, reverse JST connectors, power CJMCU-8232 from 5 V, connect 5 V to a GPIO, or drive a buzzer of unknown current directly from the ESP32-S3.

@@ -5,16 +5,16 @@
 ```text
 ┌──────────────────────────────┐     BLE      ┌──────────────────────┐
 │  MYOSA ESP32 穿戴端          │ ◄──────────► │  ESP32-S3 接收端      │
-│  MPU6050 六轴传感器           │   motion_    │  LED (GPIO2)          │
-│  SSD1306 OLED 显示屏          │   packet     │  蜂鸣器 (GPIO18)       │
-│  互补滤波 + 自适应阈值分类     │              │  CRC 校验 + 串口转发   │
+│  MPU6050 六轴传感器           │   motion_    │  OLED (GPIO8/9)       │
+│  互补滤波 + 自适应阈值分类     │   packet     │  CJMCU-8232 (GPIO4/5/6)│
+│  轻量刚性固定，无 OLED 尾线    │              │  LED + 蜂鸣器 + 串口   │
 └──────────────────────────────┘              └──────────┬───────────┘
                                                          │ USB Serial
                                                          ▼
                                               ┌──────────────────────┐
                                               │  Python Dashboard    │
                                               │  MediaPipe 姿态估计   │
-                                              │  IMU 陀螺仪图表       │
+                                              │  ECG 波形 + BPM       │
                                               │  CNN-BiGRU 模型(可选) │
                                               │  CSV 会话记录         │
                                               └──────────────────────┘
@@ -43,15 +43,15 @@
 
 ### 1.1 穿戴端（MYOSA ESP32）
 
-JST 级联顺序：
+轻量穿戴连接：
 
 ```text
-MYOSA 主板 I2C 口 ── JST 4P 线 ──► MPU6050 I2C 口
-       │
-       └── JST 4P 线 ──► SSD1306 OLED I2C 口
+MYOSA 主板 I2C 口 ── 一根短 JST 4P 线 ──► MPU6050 I2C 口
 ```
 
 - SDA = GPIO21，SCL = GPIO22（固件已定义，无需额外接线）
+- OLED 移到 S3；佩戴端固件找不到 OLED 时会继续运行
+- MYOSA 与 MPU6050 固定在同一块硬质底板，JST 线折成小弧后用胶带固定
 - MPU6050 固定在前臂背侧，X 轴指向手部，Z 轴朝外
 - BMP180 和 APDS9960 不接
 - 保留 USB-C 供电或使用移动电源
@@ -68,10 +68,27 @@ LED:
 蜂鸣器（无源）:
   ESP32-S3 GPIO18 ── 100Ω 电阻 ── 蜂鸣器 (+)
   ESP32-S3 GND     ────────────── 蜂鸣器 (-)
+
+OLED:
+  ESP32-S3 3V3   ── OLED VCC
+  ESP32-S3 GND   ── OLED GND
+  ESP32-S3 GPIO8 ── OLED SDA
+  ESP32-S3 GPIO9 ── OLED SCL
+
+CJMCU-8232:
+  ESP32-S3 3V3   ── 3.3V + SDN
+  ESP32-S3 GND   ── GND
+  ESP32-S3 GPIO4 ── OUTPUT
+  ESP32-S3 GPIO5 ── LO+
+  ESP32-S3 GPIO6 ── LO-
 ```
 
 - 接收端使用原生 USB 口（标有 **USB**），非 UART 口
 - GPIO19/20 保持空闲
+- N16R8 不使用 GPIO35/36/37；同学 Arduino 参考中的 GPIO36 不能作为 S3 ADC
+- OLED 只有 JST 口时使用 JST 转杜邦转接板，并按丝印确认 3V3/GND/SDA/SCL
+- CJMCU 只接 3.3 V，OUTPUT 线尽量短并远离 GPIO18 蜂鸣器线
+- RA/LA/RL 按电极线标签连接，不要只看颜色
 
 ### 1.3 MaixCAM 2 相机
 
@@ -89,8 +106,9 @@ MYOSA 穿戴端             ── BLE ──► ESP32-S3
 
 ### 1.4 供电
 
-- 开发时：两个板子各接一个笔记本 USB 口
+- 未贴 ECG 电极时：两个板子可各接一个笔记本 USB 口
 - 演示时：穿戴端可用移动电源供电，接收端保持笔记本供电
+- ECG 电极接触人体时：笔记本使用电池并拔掉交流充电器；本项目不是医疗隔离设备
 
 ---
 
@@ -213,10 +231,10 @@ PYTHONPATH=python python scripts/probe_cameras.py
 
 ### 步骤 1：上电检查
 
-1. 穿戴端 OLED 显示 `KEEP STILL` → `CALIBRATE`（约 2 秒）
-2. 校准完成后显示 `LITEREHAB` + 状态 + 次数
-3. 接收端 LED 闪烁（扫描中）
-4. BLE 连接成功后 LED 常亮，OLED 显示 `BLE OK`
+1. 穿戴端上电后静置约 2 秒完成 MPU6050 校准；无 OLED 也会继续
+2. 接收端 OLED 显示 `LITEREHAB`、`BLE WAIT` 和 `ECG LEADS OFF`
+3. 接收端 LED 闪烁（扫描中），BLE 连接后常亮且 OLED 显示 `BLE OK`
+4. 贴好 ECG 电极并保持静止，OLED 变为 BPM；若仍为 `LEADS OFF`，先检查电极与 GPIO5/6
 
 ### 步骤 2：启动 Dashboard
 
@@ -230,7 +248,7 @@ PYTHONPATH=python python scripts/probe_cameras.py
 
 - 顶部：串口、摄像头和融合模式健康标签，绿色表示正常，橙色表示连接中或降级，红色表示不可用
 - 左侧：摄像头画面、MediaPipe 姿态关键点、当前动作和高优先级训练反馈
-- 右侧：训练次数、当前动作、ROM、模型状态，以及 IMU 陀螺仪三轴实时曲线
+- 右侧：训练次数、当前动作、ROM、模型状态，以及实时 ECG 波形、BPM 和导联状态
 - 底部反馈条：绿色表示动作良好，橙色提示减速或增加幅度，红色提示避免躯干代偿
 
 ### 步骤 3：设定基线
@@ -243,19 +261,20 @@ PYTHONPATH=python python scripts/probe_cameras.py
 
 - 手臂自然下垂，掌心朝内
 - 旋转前臂使掌心朝前 → 回到原位
-- OLED 显示 `ROTATE`，完成后蜂鸣器响一声
+- 接收端 OLED 显示 `ROTATE`，完成后蜂鸣器响一声
 
 #### 肘部屈伸（elbow_flexion）
 
 - 手臂自然下垂
 - 弯曲肘部将前臂抬起 → 放下回原位
-- OLED 显示 `ELBOW`，完成后蜂鸣器响一声
+- 接收端 OLED 显示 `ELBOW`，完成后蜂鸣器响一声
 
 ### 步骤 5：展示反馈
 
-- **过快动作**：快速甩动手臂 → OLED 显示 `FAST` + 两声低音
-- **幅度不足**：小幅度晃动 → OLED 显示 `RANGE` + 两声低音
+- **过快动作**：快速甩动手臂 → 接收端 OLED 显示 `FAST` + 两声低音
+- **幅度不足**：小幅度晃动 → 接收端 OLED 显示 `RANGE` + 两声低音
 - **躯干代偿**：弯曲时倾斜身体 → Dashboard 提示 `Avoid trunk compensation`
+- **ECG**：Dashboard 显示连续波形和 BPM；同学逻辑检测到相邻 BPM 相差大于 20 时蜂鸣器快速提示五次。该提示只用于展示，不改变动作识别或质量反馈。
 
 ### 步骤 6：展示数据记录
 
@@ -265,7 +284,9 @@ PYTHONPATH=python python scripts/probe_cameras.py
 head -5 sessions/demo.csv
 ```
 
-包含字段：设备与接收时间戳、加速度计三轴、陀螺仪三轴、状态、次数、质量、左右侧视觉角度/速度/可见度、视觉有效标记、模型输出、subject 和人工标签。每条已接收 IMU 数据都会记录；找不到相邻视频帧时视觉字段保留为显式缺失标记。
+主会话 CSV 包含设备/接收时间、六轴 IMU、状态、次数、质量、视觉角度/速度/可见度、模型输出、subject 和人工标签。每条 IMU 都会记录，视觉缺失显式保留。
+
+同目录还会生成 `<主文件名>_ecg.csv`，字段为 `t_ms,received_s,raw_adc,bpm,leads_connected,beat,rapid_change`。ECG 文件仅用于波形展示和后续分析，不进入当前 CNN、重复计数或动作质量决策。
 
 ---
 
@@ -348,8 +369,10 @@ python train_multimodal.py --data multimodal_data --holdout-subject S03 \
 
 | 现象 | 原因 | 解决 |
 |------|------|------|
-| OLED 显示 `MPU ERROR` | MPU6050 未检测到 | 检查 JST 连接，I2C 地址应为 0x68 或 0x69 |
-| OLED 一直 `BLE WAIT` | BLE 未连接 | 检查接收端是否烧录并上电，两板距离不超过 5 米 |
+| 接收端 OLED 黑屏 | GPIO8/9 或电源顺序错误 | 断电核对 OLED 丝印/JST 转接和地址 0x3C；其他功能可继续 |
+| OLED 一直 `BLE WAIT` | BLE 未连接 | 检查佩戴端是否烧录并上电，两板距离不超过 5 米 |
+| OLED/Dashboard 一直 `LEADS OFF` | 电极或 LO+/LO- 接线问题 | 检查 RA/LA/RL 接触与 GPIO5/6，清洁干燥皮肤 |
+| ECG 波形平直或噪声大 | OUTPUT 错接/线长/电极松/蜂鸣器串扰 | 核对 GPIO4，缩短并分开模拟线，保持身体静止 |
 | Dashboard 显示 `IMU-only` | 摄像头/MediaPipe 不可用 | 检查摄像头权限，确认 MediaPipe 模型已下载 |
 | MaixCAM 2 不在相机列表 | UVC 未开启或线缆仅充电 | 开启 UVC，改用数据线，重新运行 `main.py` 和 `probe_cameras.py` |
 | MaixCAM 2 画面可见但仍为 `IMU-only` | 右侧关键点不可见 | 后退到 1.5–2.0 m，确保右肩、肘、腕和右髋都在画面内 |
