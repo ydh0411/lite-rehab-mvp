@@ -21,7 +21,12 @@ cc -std=c17 -Wall -Wextra -Werror -I"$ROOT/shared" \
   "$ROOT/tests/test_ecg_logic.c" "$ROOT/shared/ecg_logic.c" -lm \
   -o "$BUILD/test_ecg_logic"
 
+cc -std=c17 -Wall -Wextra -Werror -I"$ROOT/shared" \
+  "$ROOT/tests/test_ecg_lead_filter.c" "$ROOT/shared/ecg_lead_filter.c" \
+  -o "$BUILD/test_ecg_lead_filter"
+
 "$BUILD/test_motion_packet"
 "$BUILD/test_motion_logic"
 "$BUILD/test_feedback_logic"
 "$BUILD/test_ecg_logic"
+"$BUILD/test_ecg_lead_filter"

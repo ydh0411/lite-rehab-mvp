@@ -1,6 +1,7 @@
 #include "ecg_monitor.h"
 
 #include "driver/gpio.h"
+#include "ecg_lead_filter.h"
 #include "esp_adc/adc_oneshot.h"
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -21,19 +22,24 @@ static void ecg_task(void *arg)
     (void)arg;
     ecg_logic_t logic;
     ecg_logic_init(&logic);
+    ecg_lead_filter_t lead_filter;
+    ecg_lead_filter_init(
+        &lead_filter, (uint32_t)(esp_timer_get_time() / 1000));
     TickType_t last_wake = xTaskGetTickCount();
 
     while (true) {
-        const bool leads_off =
+        const uint32_t now_ms = (uint32_t)(esp_timer_get_time() / 1000);
+        const bool raw_leads_off =
             gpio_get_level(ECG_LO_PLUS_GPIO) != 0 ||
             gpio_get_level(ECG_LO_MINUS_GPIO) != 0;
+        const bool leads_off = ecg_lead_filter_update(
+            &lead_filter, raw_leads_off, now_ms);
         int raw_adc = 0;
         esp_err_t error = ESP_OK;
-        if (!leads_off) {
+        if (!leads_off && !raw_leads_off) {
             error = adc_oneshot_read(adc_handle, ECG_ADC_CHANNEL, &raw_adc);
         }
         if (error == ESP_OK) {
-            const uint32_t now_ms = (uint32_t)(esp_timer_get_time() / 1000);
             const ecg_monitor_sample_t sample = {
                 .timestamp_ms = now_ms,
                 .raw_adc = raw_adc,
