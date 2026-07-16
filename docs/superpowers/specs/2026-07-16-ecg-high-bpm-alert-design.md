@@ -57,8 +57,9 @@ alarm latch.
 - Rearm threshold: at or below 140 BPM.
 - Rearm confirmation: three consecutive filtered measurements at or below
   140 BPM.
-- Values between 140 and 150 BPM preserve the current latch/counter state and
-  cannot trigger or rearm the alarm by themselves.
+- Values between 140 and 150 BPM preserve the current alarm latch but reset the
+  consecutive-high and consecutive-recovery counters. They cannot trigger or
+  rearm the alarm by themselves.
 - Invalid samples and rejected candidate beats never increment high or recovery
   counters.
 
