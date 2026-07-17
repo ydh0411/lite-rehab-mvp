@@ -211,8 +211,8 @@ provide diagnosis, treatment advice, or a validated rehabilitation score.
 | Motion | `elbow_flexion` | Elbow flexion/extension-like cycle | Receiver OLED `ELBOW` |
 | Quality | `none` | No completed quality result | No tone |
 | Quality | `ok` | Completed with sufficient range and acceptable speed | One 880 Hz success tone |
-| Quality | `too_fast` | Duration too short or peak speed too high | Two low warning tones |
-| Quality | `insufficient_range` | Integrated angular range below threshold | Two low warning tones; repetition is not incremented |
+| Quality | `too_fast` | Duration too short or peak speed too high | Silent; quality remains visible and recorded |
+| Quality | `insufficient_range` | Integrated angular range below threshold | Silent; quality remains visible and recorded; repetition is not incremented |
 | Vision | `trunk_compensation` | Shoulder movement relative to the hip exceeds the visual threshold | Dashboard safety warning |
 | ECG | leads disconnected | Either CJMCU `LO+` or `LO-` is high | OLED/dashboard `LEADS OFF`; no ECG beat decision |
 | ECG | Filtered BPM `> 150` three times | Median-filtered BPM remains high for three consecutive valid measurements | One five-pulse demo alert until rearmed by three values at or below 140 BPM; does not affect motion feedback |
@@ -410,7 +410,7 @@ Target: ESP32-S3-DevKitC-1 N16R8 (`esp32s3`). The component links shared packet,
 | `motion_logic.h` | Defines tunable thresholds, public motion results, and persistent state-machine/filter state |
 | `motion_logic.c` | Implements low-pass gyro filtering, complementary roll/pitch estimation, idle-only adaptive thresholds, axis/acceleration classification, reversal phases, range integration, speed/range quality, refractory time, and repetition counting |
 | `feedback_logic.h` | Defines `NONE`, `SUCCESS`, and `WARNING` receiver events plus transition state |
-| `feedback_logic.c` | Emits one event only when motion changes from active to idle, preventing a persistent quality value from repeatedly filling the buzzer queue |
+| `feedback_logic.c` | Emits one success event only when `rep_count` increases; incomplete, failed, repeated, and stale motion packets remain silent |
 | `ecg_logic.h/.c` | Preserves threshold 2500, 250 ms refractory, `60000/delta`, and BPM difference `>20`; adds the required below-threshold latch release and lead-off reset |
 
 #### BLE packet layout

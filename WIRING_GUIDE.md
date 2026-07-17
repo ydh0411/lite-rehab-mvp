@@ -158,5 +158,5 @@ in [`maixcam2/README.md`](maixcam2/README.md). / MaixCAM 2 只提供视频，与
 2. The receiver OLED shows `BLE WAIT` while scanning and `BLE OK` after connection.
 3. With ECG electrodes detached it shows `ECG LEADS OFF`; after attachment and threshold crossings it shows BPM.
 4. ESP32-S3 LED blinks while scanning and stays on after connection.
-5. A valid repetition produces one high beep; a fast or short-range movement produces two low warning tones.
+5. Only an increase in `rep_count` produces one high beep. Fast, short-range, incomplete, repeated, and stale motion packets remain silent; their quality remains visible and recorded.
 6. Filtered BPM above 150 for three consecutive valid measurements triggers one five-pulse alert. It rearms after three filtered values at or below 140 BPM. This classroom demo rule is not medically validated.

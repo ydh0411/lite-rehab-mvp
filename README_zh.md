@@ -204,8 +204,8 @@ PYTHON=python ./scripts/start_maixcam2_demo.sh \
 | 动作 | `elbow_flexion` | 类似肘关节屈伸往返 | 接收端 OLED 显示 `ELBOW` |
 | 质量 | `none` | 尚无完成动作质量 | 不响 |
 | 质量 | `ok` | 幅度充分且速度可接受 | 一声 880 Hz 成功音 |
-| 质量 | `too_fast` | 持续时间过短或峰值速度过高 | 两声低频警告音 |
-| 质量 | `insufficient_range` | 积分角度范围低于阈值 | 两声警告音，次数不增加 |
+| 质量 | `too_fast` | 持续时间过短或峰值速度过高 | 静音；质量状态仍会显示和记录 |
+| 质量 | `insufficient_range` | 积分角度范围低于阈值 | 静音；质量状态仍会显示和记录，次数不增加 |
 | 视觉 | `trunk_compensation` | 肩部相对髋部的偏移超过视觉阈值 | Dashboard 安全提示 |
 | ECG | 导联断开 | CJMCU `LO+` 或 `LO-` 为高 | OLED/Dashboard 显示 `LEADS OFF`，不作 ECG 心跳判断 |
 | ECG | 滤波 BPM 连续 3 次 `> 150` | 最近有效 RR 间隔中位数持续偏高 | 发出一次五连响；连续 3 次降至 140 BPM 或以下后重新允许报警；不改变动作反馈 |
@@ -403,7 +403,7 @@ lite_rehab_mvp/
 | `motion_logic.h` | 定义可调阈值、公开动作结果以及状态机/滤波器持久状态 |
 | `motion_logic.c` | 实现陀螺仪低通、Roll/Pitch 互补滤波、仅 idle 更新的自适应阈值、轴/加速度分类、反向阶段、幅度积分、速度/范围质量、refractory 时间和计数 |
 | `feedback_logic.h` | 定义 `NONE`、`SUCCESS`、`WARNING` 接收端事件与转移状态 |
-| `feedback_logic.c` | 只在动作从 active 转为 idle 时产生一次事件，防止持久 quality 值重复填充蜂鸣器队列 |
+| `feedback_logic.c` | 只有 `rep_count` 增加时才产生一次成功事件；未完成、失败、重复和过期动作数据均保持静音 |
 | `ecg_logic.h/.c` | 保留阈值 2500、250 ms、`60000/delta` 与 BPM 差值 `>20`，只补下降沿 latch 释放和导联断开重置 |
 
 #### BLE 数据包布局
