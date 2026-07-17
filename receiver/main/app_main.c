@@ -28,7 +28,10 @@ static void connection_changed(bool connected)
     receiver_display_set_connected(connected);
     printf("# BLE %s\n", connected ? "connected" : "disconnected");
     fflush(stdout);
-    if (!connected) have_sequence = false;
+    if (!connected) {
+        have_sequence = false;
+        feedback_logic_init(&feedback_logic);
+    }
 }
 
 static void packet_received(const motion_packet_t *packet)
