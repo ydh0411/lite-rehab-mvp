@@ -32,7 +32,7 @@
 - Consumes: Vite CSS imports and the existing single global stylesheet.
 - Produces: locally bundled `Geist Variable` and `Geist Mono Variable` families plus semantic CSS properties such as `--font-sans`, `--font-mono`, `--text-*`, `--surface-*`, and `--status-*`.
 
-- [ ] **Step 1: Write the failing design-system contract test**
+- [x] **Step 1: Write the failing design-system contract test**
 
 ```ts
 import { readFileSync } from "node:fs"
@@ -53,12 +53,12 @@ describe("dashboard design system", () => {
 })
 ```
 
-- [ ] **Step 2: Run the test and verify the missing font dependency/tokens fail**
+- [x] **Step 2: Run the test and verify the missing font dependency/tokens fail**
 
-Run: `cd web && npm test -- --run src/designSystem.test.ts`  
+Run: `cd web && npm test -- --run src/designSystem.test.ts`
 Expected: FAIL because the font packages and semantic tokens are absent.
 
-- [ ] **Step 3: Install and import the offline fonts**
+- [x] **Step 3: Install and import the offline fonts**
 
 Run: `cd web && npm install @fontsource-variable/geist@5.2.9 @fontsource-variable/geist-mono@5.2.8`
 
@@ -84,12 +84,12 @@ Define the semantic foundation at the start of `styles.css`:
 }
 ```
 
-- [ ] **Step 4: Replace sub-12 px declarations with the semantic scale and run the test**
+- [x] **Step 4: Replace sub-12 px declarations with the semantic scale and run the test**
 
-Run: `cd web && npm test -- --run src/designSystem.test.ts`  
+Run: `cd web && npm test -- --run src/designSystem.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit typography foundation**
+- [x] **Step 5: Commit typography foundation**
 
 ```bash
 git add web/package.json web/package-lock.json web/src/main.tsx web/src/styles.css web/src/designSystem.test.ts
@@ -109,7 +109,7 @@ git commit -m "style: add offline dashboard typography"
 - Consumes: existing routing, `LiveSnapshot`, and live action callbacks.
 - Produces: a light product shell, compact status row, and an accessible `role="group"` landmark named `Primary session metric` around repetitions.
 
-- [ ] **Step 1: Add failing shell and live hierarchy assertions**
+- [x] **Step 1: Add failing shell and live hierarchy assertions**
 
 Add to the application-shell test:
 
@@ -126,12 +126,12 @@ expect(screen.getByRole("group", { name: "Primary session metric" })).toHaveText
 )
 ```
 
-- [ ] **Step 2: Run focused tests and verify the new labels/landmark fail**
+- [x] **Step 2: Run focused tests and verify the new labels/landmark fail**
 
-Run: `cd web && npm test -- --run src/app/App.test.tsx src/features/live/LivePage.test.tsx`  
+Run: `cd web && npm test -- --run src/app/App.test.tsx src/features/live/LivePage.test.tsx`
 Expected: FAIL because the new shell copy and metric landmark do not exist.
 
-- [ ] **Step 3: Implement the shell copy and semantic metric landmark**
+- [x] **Step 3: Implement the shell copy and semantic metric landmark**
 
 Change the brand subtitle to `Live workspace`, the local note title to `Stored on this computer`, and wrap the repetition block as:
 
@@ -144,12 +144,12 @@ Change the brand subtitle to `Live workspace`, the local note title to `Stored o
 
 Rewrite the shell/live CSS using the shared tokens: 208 px light sidebar, graphite brand mark, neutral active row with teal indicator, 40 px controls, 12–14 px labels, bordered cards, and a 1280 × 720-compatible live grid.
 
-- [ ] **Step 4: Run focused tests**
+- [x] **Step 4: Run focused tests**
 
-Run: `cd web && npm test -- --run src/app/App.test.tsx src/features/live/LivePage.test.tsx`  
+Run: `cd web && npm test -- --run src/app/App.test.tsx src/features/live/LivePage.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 5: Commit shell and live refresh**
+- [x] **Step 5: Commit shell and live refresh**
 
 ```bash
 git add web/src/app/App.test.tsx web/src/app/AppShell.tsx web/src/features/live/LivePage.test.tsx web/src/features/live/LivePage.tsx web/src/styles.css
@@ -170,7 +170,7 @@ git commit -m "style: refine live dashboard hierarchy"
 - Consumes: unchanged `SessionSummary`, `SessionReport`, and chart series.
 - Produces: `Session overview` and `Session measurements` labelled regions, consistent chart tokens, normal-density table styling, and unchanged print behavior.
 
-- [ ] **Step 1: Add failing page-region assertions**
+- [x] **Step 1: Add failing page-region assertions**
 
 Add to `HistoryPage.test.tsx`:
 
@@ -184,12 +184,12 @@ Add to `ReportPage.test.tsx`:
 expect(screen.getByRole("region", { name: "Session measurements" })).toBeVisible()
 ```
 
-- [ ] **Step 2: Run focused tests and verify the missing regions fail**
+- [x] **Step 2: Run focused tests and verify the missing regions fail**
 
-Run: `cd web && npm test -- --run src/features/history/HistoryPage.test.tsx src/features/report/ReportPage.test.tsx`  
+Run: `cd web && npm test -- --run src/features/history/HistoryPage.test.tsx src/features/report/ReportPage.test.tsx`
 Expected: FAIL because the summary containers are not labelled regions.
 
-- [ ] **Step 3: Add the landmarks and align visual patterns**
+- [x] **Step 3: Add the landmarks and align visual patterns**
 
 Apply these attributes:
 
@@ -203,12 +203,12 @@ Apply these attributes:
 
 Update history/report CSS to use the shared metric strip, 13 px table cells, 12 px sentence-case headers, mono session IDs, consistent 36–40 px filters, tokenized chart/card colors, and existing A4 print rules. Replace raw chart colors with the refreshed semantic palette while retaining series meaning.
 
-- [ ] **Step 4: Run focused tests**
+- [x] **Step 4: Run focused tests**
 
-Run: `cd web && npm test -- --run src/features/history/HistoryPage.test.tsx src/features/report/ReportPage.test.tsx`  
+Run: `cd web && npm test -- --run src/features/history/HistoryPage.test.tsx src/features/report/ReportPage.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 5: Commit records and report refresh**
+- [x] **Step 5: Commit records and report refresh**
 
 ```bash
 git add web/src/features/history/HistoryPage.test.tsx web/src/features/history/HistoryPage.tsx web/src/features/report/ReportPage.test.tsx web/src/features/report/ReportPage.tsx web/src/features/report/ReportCharts.tsx web/src/styles.css
@@ -224,22 +224,22 @@ git commit -m "style: unify records and report views"
 - Consumes: the complete visual refresh.
 - Produces: verification evidence for behavior, production compilation, local serving, and scope containment.
 
-- [ ] **Step 1: Run the complete frontend suite and build**
+- [x] **Step 1: Run the complete frontend suite and build**
 
-Run: `cd web && npm test -- --run && npm run build`  
+Run: `cd web && npm test -- --run && npm run build`
 Expected: all test files pass and Vite exits 0.
 
-- [ ] **Step 2: Run the local built-frontend smoke test**
+- [x] **Step 2: Run the local built-frontend smoke test**
 
-Run: `./scripts/start_web_demo.sh --fixture --headless-smoke-test --no-browser`  
+Run: `./scripts/start_web_demo.sh --fixture --headless-smoke-test --no-browser`
 Expected: `LiteRehab web dashboard smoke test: PASS`.
 
-- [ ] **Step 3: Check scope and whitespace**
+- [x] **Step 3: Check scope and whitespace**
 
-Run: `git diff --check main...HEAD && git diff --stat main...HEAD`  
+Run: `git diff --check main...HEAD && git diff --stat main...HEAD`
 Expected: no whitespace errors; changes limited to the visual-refresh spec/plan and `web/` frontend files.
 
-- [ ] **Step 4: Mark plan complete and commit**
+- [x] **Step 4: Mark plan complete and commit**
 
 ```bash
 git add docs/superpowers/plans/2026-07-17-dashboard-visual-refresh.md

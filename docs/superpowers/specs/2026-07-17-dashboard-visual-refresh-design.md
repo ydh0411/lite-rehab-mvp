@@ -1,7 +1,7 @@
 # LiteRehab Dashboard Visual Refresh Design
 
-**Date:** 2026-07-17  
-**Status:** Approved by user direction to select and implement the clearest reusable style  
+**Date:** 2026-07-17
+**Status:** Approved by user direction to select and implement the clearest reusable style
 **Scope:** Existing local React dashboard only; no hardware, API, session-storage, or report-calculation changes
 
 ## Objective
