@@ -3,7 +3,7 @@
 void feedback_logic_init(feedback_logic_t *logic)
 {
     if (logic == NULL) return;
-    logic->previous_state = MOTION_STATE_IDLE;
+    logic->previous_rep_count = 0;
     logic->initialized = false;
 }
 
@@ -12,23 +12,16 @@ feedback_event_t feedback_logic_update(feedback_logic_t *logic,
 {
     if (logic == NULL || packet == NULL) return FEEDBACK_EVENT_NONE;
 
-    const motion_state_t state = (motion_state_t)packet->state;
     if (!logic->initialized) {
-        logic->previous_state = state;
+        logic->previous_rep_count = packet->rep_count;
         logic->initialized = true;
         return FEEDBACK_EVENT_NONE;
     }
 
-    const bool completed = logic->previous_state != MOTION_STATE_IDLE &&
-                           state == MOTION_STATE_IDLE;
-    logic->previous_state = state;
-    if (!completed) return FEEDBACK_EVENT_NONE;
-
-    const motion_quality_t quality = (motion_quality_t)packet->quality;
-    if (quality == MOTION_QUALITY_TOO_FAST ||
-        quality == MOTION_QUALITY_INSUFFICIENT_RANGE) {
-        return FEEDBACK_EVENT_WARNING;
+    if (packet->rep_count <= logic->previous_rep_count) {
+        return FEEDBACK_EVENT_NONE;
     }
-    return quality == MOTION_QUALITY_OK ? FEEDBACK_EVENT_SUCCESS
-                                       : FEEDBACK_EVENT_NONE;
+
+    logic->previous_rep_count = packet->rep_count;
+    return FEEDBACK_EVENT_SUCCESS;
 }

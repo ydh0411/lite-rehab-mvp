@@ -12,7 +12,7 @@ typedef enum {
 } feedback_event_t;
 
 typedef struct {
-    motion_state_t previous_state;
+    uint16_t previous_rep_count;
     bool initialized;
 } feedback_logic_t;
 
