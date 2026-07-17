@@ -14,6 +14,8 @@ describe("application shell", () => {
 
     expect(screen.getByRole("link", { name: /live training/i })).toBeVisible()
     expect(screen.getByRole("link", { name: /session history/i })).toBeVisible()
+    expect(screen.getByText("Live workspace")).toBeVisible()
+    expect(screen.getByText("Stored on this computer")).toBeVisible()
     expect(screen.queryByText(/upgrade plan/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/unlock insights/i)).not.toBeInTheDocument()
   })

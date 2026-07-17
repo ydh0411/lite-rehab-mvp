@@ -50,6 +50,9 @@ describe("LivePage", () => {
     expect(screen.getByText("Leads off")).toBeVisible()
     expect(screen.queryByText("0 BPM")).not.toBeInTheDocument()
     expect(screen.getByText("Camera unavailable")).toBeVisible()
+    expect(
+      screen.getByRole("group", { name: "Primary session metric" }),
+    ).toHaveTextContent("Completed repetitions0")
   })
 
   it("keeps the camera placeholder visible while the device is retrying", () => {

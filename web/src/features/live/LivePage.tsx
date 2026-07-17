@@ -197,7 +197,7 @@ export function LivePage({
             <small>{snapshot.source}</small>
           </div>
 
-          <div className="repetition-metric">
+          <div className="repetition-metric" role="group" aria-label="Primary session metric">
             <span>Completed repetitions</span>
             <strong>{snapshot.repetitions}</strong>
           </div>

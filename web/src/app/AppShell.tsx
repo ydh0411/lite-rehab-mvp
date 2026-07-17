@@ -18,7 +18,7 @@ export function AppShell() {
           </div>
           <div>
             <strong>LiteRehab</strong>
-            <span>Fusion workspace</span>
+            <span>Live workspace</span>
           </div>
         </div>
 
@@ -40,7 +40,7 @@ export function AppShell() {
         <div className="sidebar-note">
           <div className="sidebar-note-title">
             <ShieldCheck size={16} />
-            <span>Local only</span>
+            <span>Stored on this computer</span>
           </div>
           <p>Session data remains on this presentation computer.</p>
         </div>
