@@ -31,6 +31,7 @@ describe("HistoryPage", () => {
     )
 
     expect(screen.getByText("Demo-02")).toBeVisible()
+    expect(screen.getByRole("region", { name: "Session overview" })).toBeVisible()
     expect(screen.getByRole("link", { name: /view report/i })).toHaveAttribute(
       "href",
       "/reports/demo-session",

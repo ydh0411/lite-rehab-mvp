@@ -35,6 +35,7 @@ describe("ReportPage", () => {
       </MemoryRouter>,
     )
 
+    expect(screen.getByRole("region", { name: "Session measurements" })).toBeVisible()
     expect(screen.getByText(/not a medical device/i)).toBeVisible()
     expect(screen.getByText("Not available")).toBeVisible()
     expect(screen.queryByText("0 BPM")).not.toBeInTheDocument()

@@ -70,7 +70,7 @@ export function ReportPage({ report, loading, error }: ReportPageProps) {
         </button>
       </header>
 
-      <div className="report-metrics">
+      <div className="report-metrics" role="region" aria-label="Session measurements">
         <div><Dumbbell size={19} /><span>Valid repetitions</span><strong>{report.repetitions}</strong></div>
         <div><CheckCircle2 size={19} /><span>Good-form events</span><strong>{report.good_form_percent === null ? "Not available" : `${report.good_form_percent.toFixed(1)}%`}</strong></div>
         <div><Ruler size={19} /><span>Maximum observed ROM</span><strong>{report.max_rom_deg === null ? "Not available" : `${report.max_rom_deg.toFixed(1)}°`}</strong></div>
@@ -79,8 +79,8 @@ export function ReportPage({ report, loading, error }: ReportPageProps) {
 
       <div className="report-content-grid">
         <TrendChart title="Repetitions over time" description="Positive counter increments" data={report.repetition_series} unit="" />
-        <TrendChart title="Range of motion" description="Peak-to-peak valid pose interval" data={report.rom_series} unit="°" color="#286f9b" />
-        <TrendChart title="Connected BPM" description="Positive BPM values with leads connected" data={report.bpm_series} unit="" color="#b13b3b" />
+        <TrendChart title="Range of motion" description="Peak-to-peak valid pose interval" data={report.rom_series} unit="°" color="#326f9e" />
+        <TrendChart title="Connected BPM" description="Positive BPM values with leads connected" data={report.bpm_series} unit="" color="#b64747" />
 
         <article className="quality-distribution">
           <header><strong>Movement quality events</strong><span>{qualityTotal} recognized events</span></header>

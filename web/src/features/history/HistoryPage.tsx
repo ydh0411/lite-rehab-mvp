@@ -74,7 +74,7 @@ export function HistoryPage({ sessions, loading, error }: HistoryPageProps) {
         </div>
       </header>
 
-      <div className="history-summary" aria-label="History summary">
+      <div className="history-summary" role="region" aria-label="Session overview">
         <div><ClipboardList size={18} /><span>Recorded sessions</span><strong>{sessions.length}</strong></div>
         <div><Dumbbell size={18} /><span>Valid repetitions</span><strong>{totalRepetitions}</strong></div>
         <div><Clock3 size={18} /><span>Average duration</span><strong>{formatDuration(averageDuration)}</strong></div>
