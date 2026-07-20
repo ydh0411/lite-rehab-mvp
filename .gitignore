@@ -11,6 +11,8 @@ __pycache__/
 *.pyc
 sessions/
 models/
+python/.literehab_mobile_token
+python/.literehab_pairing.png
 
 # IDE / editor
 .vscode/

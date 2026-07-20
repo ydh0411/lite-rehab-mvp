@@ -7,3 +7,4 @@ torch>=2.2
 fastapi>=0.116,<0.117
 uvicorn[standard]>=0.35,<0.36
 httpx>=0.28,<1
+qrcode>=8,<9
