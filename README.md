@@ -475,6 +475,29 @@ The current suite collects **91 Python tests** and runs **4 C host-test executab
 | `scripts/probe_cameras.py` | List usable local OpenCV/UVC indices |
 | `scripts/test_all.sh` | Run C, Python, syntax, smoke, and firmware build checks |
 
+## Native iPhone app (iOS 17+)
+
+The first native SwiftUI app is in `ios/`. It uses Stanford Spezi for the app lifecycle and provides portrait Live, History, Report/PDF, and Settings experiences. The Mac remains the hardware and inference host; the iPhone connects over the same trusted Wi-Fi network using an authenticated QR pairing code.
+
+### Build and install
+
+1. Install full Xcode, open it once, and install an iOS Simulator runtime in **Xcode → Settings → Components**. If needed, select Xcode with `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`.
+2. Install XcodeGen: `brew install xcodegen`.
+3. Install Python dependencies: `python -m pip install -r python/requirements.txt`.
+4. Generate the project: `cd ios && xcodegen generate`.
+5. Open `ios/LiteRehab.xcodeproj`, select the **LiteRehab** target, choose your Personal Team under **Signing & Capabilities**, and use a unique bundle identifier if Xcode requests one.
+6. Connect an iPhone, enable Developer Mode when prompted, select it as the run destination, and press Run. Repeat on each team iPhone.
+
+Start the Mac service from the repository root:
+
+```bash
+./scripts/start_ios_demo.sh 0
+```
+
+Replace `0` with a camera index or stream URL. Keep the Mac and iPhone on the same Wi-Fi, then scan the terminal QR code in the app. A free Apple Personal Team profile normally expires after seven days; rebuild from Xcode to reinstall. App Store submission is not required for this team demo.
+
+The mobile token is stored in the iPhone Keychain. The generated Mac token/QR files are local, ignored by Git, and should not be shared publicly.
+
 ## Troubleshooting
 
 | Symptom | Likely cause | Action |

@@ -468,6 +468,29 @@ PYTHON=python ./scripts/test_all.sh
 | `scripts/probe_cameras.py` | 列出可用的本地 OpenCV/UVC 编号 |
 | `scripts/test_all.sh` | 运行 C、Python、语法、冒烟和固件构建检查 |
 
+## 原生 iPhone App（iOS 17+）
+
+第一版原生 SwiftUI App 位于 `ios/`，使用 Stanford Spezi 管理 App 生命周期，提供竖屏的 Live、History、Report/PDF 与 Settings 界面。Mac 仍负责硬件连接和模型推理；iPhone 在同一个可信 Wi-Fi 内，通过带访问令牌的二维码安全配对。
+
+### 构建并安装到几台 iPhone
+
+1. 安装完整 Xcode，首次打开后在 **Xcode → Settings → Components** 安装 iOS Simulator；如有需要执行 `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`。
+2. 安装 XcodeGen：`brew install xcodegen`。
+3. 安装 Python 依赖：`python -m pip install -r python/requirements.txt`。
+4. 生成工程：`cd ios && xcodegen generate`。
+5. 打开 `ios/LiteRehab.xcodeproj`，在 **LiteRehab → Signing & Capabilities** 选择自己的 Personal Team；若 Xcode 提示冲突，改成唯一的 Bundle Identifier。
+6. 连接 iPhone，按提示开启 Developer Mode，在 Xcode 顶部选择该手机并点击 Run；其他组员手机重复此步骤。
+
+回到仓库根目录启动 Mac 服务：
+
+```bash
+./scripts/start_ios_demo.sh 0
+```
+
+`0` 可替换成摄像头编号或视频流 URL。Mac 和 iPhone 必须在同一 Wi-Fi，然后在 App 内扫描终端二维码。课程演示不需要提交 App Store。免费的 Apple Personal Team 签名通常 7 天后过期，到期后用 Xcode 重新 Run 即可。
+
+iPhone 令牌保存在 Keychain；Mac 生成的令牌和二维码文件只保存在本机并已被 Git 忽略，不应公开分享。
+
 ## 故障排查
 
 | 现象 | 可能原因 | 处理方法 |

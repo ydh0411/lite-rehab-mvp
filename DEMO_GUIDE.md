@@ -410,3 +410,35 @@ python train_multimodal.py --data multimodal_data --holdout-subject S03 \
 ## 九、安全声明
 
 此为工程原型，不用于临床诊断、处方治疗、临床评分预测或替代物理治疗师。
+
+---
+
+## 十、iPhone 原生 App 演示流程
+
+### 10.1 演示前准备
+
+```bash
+cd ios
+xcodegen generate
+open LiteRehab.xcodeproj
+```
+
+在 Xcode 中为 LiteRehab Target 选择 Personal Team，把 App 安装到每台 iOS 17 或更高版本的 iPhone。手机与 Mac 连接同一个可信 Wi-Fi；不要使用需要网页认证或隔离客户端的公共网络。
+
+### 10.2 启动与配对
+
+```bash
+./scripts/start_ios_demo.sh 0
+```
+
+终端出现二维码后，在 iPhone 打开 LiteRehab，点击 **Scan Mac QR Code**。成功后依次检查：
+
+1. **Live**：连接状态、相机、实时反馈、次数、ROM、动作/侧别/模型状态与 ECG；
+2. 输入 Participant ID 并 Start，测试 Baseline、Reset Range 与 Stop；
+3. **History**：下拉刷新、搜索 Participant ID、按动作筛选并进入一次 Session；
+4. **Report**：指标、三张趋势图、质量/完整度/警告，并生成和分享 PDF；
+5. **Settings**：连接地址、Acknowledgements 与 Clear Connection。
+
+### 10.3 断线检查
+
+演示前至少做一次关闭/恢复 iPhone Wi-Fi 的重连测试，以及一次重新启动 Mac 服务后扫描新二维码的测试。相机不可用时 Live 页面应显示占位信息，但 IMU 和 ECG 状态不能被伪装成相机错误。完成真实硬件检查后，再开始对外演示。
