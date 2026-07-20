@@ -1,6 +1,7 @@
 # ESP-IDF build
 build/
 build-host/
+.build/
 sdkconfig
 sdkconfig.old
 dependencies.lock
