@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		02228FF9663901A647332143 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 39D5BD31241A8DE929C50089 /* Assets.xcassets */; };
 		10C135BDA297D2FA98614018 /* THIRD_PARTY_NOTICES.md in Resources */ = {isa = PBXBuildFile; fileRef = EAB6B06AB1EC842A99CD8A02 /* THIRD_PARTY_NOTICES.md */; };
+		1B0E4428606CBC1A498F1B7F /* LiveStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E44B4BB09754CFE44137498A /* LiveStoreTests.swift */; };
 		1FBC5AB82A20A772052B1241 /* AcknowledgementsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2DBDB02E76A8B7C89FED59F /* AcknowledgementsView.swift */; };
 		2326FF25D93D63D036F5D8A3 /* PairingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E24387C1914767811346EFF /* PairingCoordinator.swift */; };
 		27DC144D51B13E64ACE6A8FF /* ReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C364B1AC71DB838307196446 /* ReportView.swift */; };
@@ -35,6 +36,7 @@
 		87D604DA82811E668E928880 /* ECGTraceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51D59A892877A94C05957734 /* ECGTraceView.swift */; };
 		8C3FA4E45270EE38E9E62F75 /* LiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B5FF5D48A7110F0BEE8D76D /* LiveView.swift */; };
 		93888F95E70D6A3191F56AAE /* LiteRehabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A8DA4FA27319B529CF479B9 /* LiteRehabUITests.swift */; };
+		96FCA300264A62EA5AE930D0 /* FeedbackHaptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9475135370C7CF8978F6C7F /* FeedbackHaptics.swift */; };
 		9DF5A98F3848C988EC0570AE /* LiteRehabApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6BAF969161C714B8D2B401E /* LiteRehabApp.swift */; };
 		A0659386F8BDA3147F53A4A3 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34624A80F8CF7F9664736601 /* SettingsView.swift */; };
 		A477A170202C55DDA2AB432A /* MetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC7146F5545150079E17B99 /* MetricCard.swift */; };
@@ -45,10 +47,12 @@
 		C1D46D0ACFEA213AA9AC77CF /* SpeziOnboarding in Frameworks */ = {isa = PBXBuildFile; productRef = 4D64A11029A8A96A3719DF1F /* SpeziOnboarding */; };
 		C461E169E66691701763CDC8 /* HardwareReadiness.swift in Sources */ = {isa = PBXBuildFile; fileRef = E76FC8832669340F529E17BD /* HardwareReadiness.swift */; };
 		C864D8E0C9286F8175F11B53 /* ConnectionVaultTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66BA206348B0103C55E40D19 /* ConnectionVaultTests.swift */; };
+		CCE9F594125F1A51700FCCC7 /* LiveTestDoubles.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9CE23D5F6E67FE4AC2AEEC2 /* LiveTestDoubles.swift */; };
 		D908814CC087CB62587E9149 /* StartSessionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5130318CC4007B802BDD3749 /* StartSessionSheet.swift */; };
 		E1B5D6766C5175C6913443CA /* LiveWebSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA5B2C01D9F45820F7AD0C50 /* LiveWebSocketClient.swift */; };
 		E64851CB3DC596054CE6DCBF /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47DCEF9497DEED03B8C413D /* HistoryView.swift */; };
 		E9B5AC4882437491F9D79D42 /* NavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0BFFD293E6174D9143067C /* NavigationTests.swift */; };
+		EE53D863FF145252FEB35E40 /* SessionClock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF6C8D3D17AD5AC533B7B16 /* SessionClock.swift */; };
 		FC1DA00D5065E25863556FFA /* Spezi in Frameworks */ = {isa = PBXBuildFile; productRef = 6148CD2668E7951C328158C8 /* Spezi */; };
 /* End PBXBuildFile section */
 
@@ -89,6 +93,7 @@
 		654FF6EA08C8585172635584 /* QRCodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeScannerView.swift; sourceTree = "<group>"; };
 		66BA206348B0103C55E40D19 /* ConnectionVaultTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionVaultTests.swift; sourceTree = "<group>"; };
 		6A8DA4FA27319B529CF479B9 /* LiteRehabUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiteRehabUITests.swift; sourceTree = "<group>"; };
+		6EF6C8D3D17AD5AC533B7B16 /* SessionClock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionClock.swift; sourceTree = "<group>"; };
 		7733171FCE4248E9F4618C10 /* HistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryStore.swift; sourceTree = "<group>"; };
 		7B4D90187D07DCC89DC1D693 /* LiteRehabUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LiteRehabUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8AC7146F5545150079E17B99 /* MetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCard.swift; sourceTree = "<group>"; };
@@ -101,6 +106,7 @@
 		ADAA0524D14E5C4287AF7954 /* SessionFlowState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionFlowState.swift; sourceTree = "<group>"; };
 		B29435757A393E3BAD9EE402 /* LivePresentationModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePresentationModelsTests.swift; sourceTree = "<group>"; };
 		B60D8B5C061071968FA57586 /* LiteRehabStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiteRehabStyle.swift; sourceTree = "<group>"; };
+		B9CE23D5F6E67FE4AC2AEEC2 /* LiveTestDoubles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTestDoubles.swift; sourceTree = "<group>"; };
 		BA5B2C01D9F45820F7AD0C50 /* LiveWebSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveWebSocketClient.swift; sourceTree = "<group>"; };
 		C364B1AC71DB838307196446 /* ReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportView.swift; sourceTree = "<group>"; };
 		C47DCEF9497DEED03B8C413D /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
@@ -111,7 +117,9 @@
 		D2DBDB02E76A8B7C89FED59F /* AcknowledgementsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AcknowledgementsView.swift; sourceTree = "<group>"; };
 		D6BAF969161C714B8D2B401E /* LiteRehabApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiteRehabApp.swift; sourceTree = "<group>"; };
 		DA3BBD9A97909AB633DF2AB1 /* FeedbackPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackPresentation.swift; sourceTree = "<group>"; };
+		E44B4BB09754CFE44137498A /* LiveStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveStoreTests.swift; sourceTree = "<group>"; };
 		E76FC8832669340F529E17BD /* HardwareReadiness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareReadiness.swift; sourceTree = "<group>"; };
+		E9475135370C7CF8978F6C7F /* FeedbackHaptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackHaptics.swift; sourceTree = "<group>"; };
 		EAB6B06AB1EC842A99CD8A02 /* THIRD_PARTY_NOTICES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = THIRD_PARTY_NOTICES.md; sourceTree = "<group>"; };
 		F68A4E31605BF828D0FC7F52 /* SessionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -166,7 +174,9 @@
 				50DF473DCA16A4F3D6B0C512 /* APIClientTests.swift */,
 				66BA206348B0103C55E40D19 /* ConnectionVaultTests.swift */,
 				B29435757A393E3BAD9EE402 /* LivePresentationModelsTests.swift */,
+				E44B4BB09754CFE44137498A /* LiveStoreTests.swift */,
 				3E9E8C8D10BEDA9C2C925B0C /* ReportPDFRendererTests.swift */,
+				D3F8109277F574BE3D5CA2BF /* Support */,
 			);
 			path = LiteRehabTests;
 			sourceTree = "<group>";
@@ -249,6 +259,14 @@
 			path = DesignSystem;
 			sourceTree = "<group>";
 		};
+		D3F8109277F574BE3D5CA2BF /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				B9CE23D5F6E67FE4AC2AEEC2 /* LiveTestDoubles.swift */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
 		D69962F5DD538AED2CE2AFB7 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
@@ -272,10 +290,12 @@
 			isa = PBXGroup;
 			children = (
 				51D59A892877A94C05957734 /* ECGTraceView.swift */,
+				E9475135370C7CF8978F6C7F /* FeedbackHaptics.swift */,
 				DA3BBD9A97909AB633DF2AB1 /* FeedbackPresentation.swift */,
 				E76FC8832669340F529E17BD /* HardwareReadiness.swift */,
 				9F54DF53CA065324FD5DB72F /* LiveStore.swift */,
 				5B5FF5D48A7110F0BEE8D76D /* LiveView.swift */,
+				6EF6C8D3D17AD5AC533B7B16 /* SessionClock.swift */,
 				ADAA0524D14E5C4287AF7954 /* SessionFlowState.swift */,
 				5130318CC4007B802BDD3749 /* StartSessionSheet.swift */,
 			);
@@ -419,6 +439,8 @@
 				522F9CA9545E561662CA4FC5 /* APIClientTests.swift in Sources */,
 				C864D8E0C9286F8175F11B53 /* ConnectionVaultTests.swift in Sources */,
 				368ED48CDE817CFCA1FB7038 /* LivePresentationModelsTests.swift in Sources */,
+				1B0E4428606CBC1A498F1B7F /* LiveStoreTests.swift in Sources */,
+				CCE9F594125F1A51700FCCC7 /* LiveTestDoubles.swift in Sources */,
 				3A342A7A7C92D57B3E44E057 /* ReportPDFRendererTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -433,6 +455,7 @@
 				3C68E5673B354A35633BDA0D /* CameraFrameClient.swift in Sources */,
 				66CAA014DDCF4FEE0D7B536D /* ConnectionVault.swift in Sources */,
 				87D604DA82811E668E928880 /* ECGTraceView.swift in Sources */,
+				96FCA300264A62EA5AE930D0 /* FeedbackHaptics.swift in Sources */,
 				757F9C3E3B9AA03241695D80 /* FeedbackPresentation.swift in Sources */,
 				C461E169E66691701763CDC8 /* HardwareReadiness.swift in Sources */,
 				6DE6A40BBA7BA8E8D47FA5EB /* HistoryStore.swift in Sources */,
@@ -453,6 +476,7 @@
 				30C945FEABA85C053042DC4F /* ReportStore.swift in Sources */,
 				27DC144D51B13E64ACE6A8FF /* ReportView.swift in Sources */,
 				52F27AAA8C1A68C8F2E1C7C4 /* SessionCard.swift in Sources */,
+				EE53D863FF145252FEB35E40 /* SessionClock.swift in Sources */,
 				A863E124EEF481B811D2B23F /* SessionFlowState.swift in Sources */,
 				A0659386F8BDA3147F53A4A3 /* SettingsView.swift in Sources */,
 				D908814CC087CB62587E9149 /* StartSessionSheet.swift in Sources */,

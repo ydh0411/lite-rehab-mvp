@@ -13,7 +13,10 @@ enum LiveConnectionState: Equatable {
 @MainActor
 protocol LiveStreaming: AnyObject {
     var state: LiveConnectionState { get }
-    func start(onSnapshot: @escaping @MainActor (LiveSnapshot) -> Void)
+    func start(
+        onState: @escaping @MainActor @Sendable (LiveConnectionState) -> Void,
+        onSnapshot: @escaping @MainActor @Sendable (LiveSnapshot) -> Void
+    )
     func stop()
 }
 
@@ -26,16 +29,21 @@ final class LiveWebSocketClient: ObservableObject, LiveStreaming {
     private var receiveTask: Task<Void, Never>?
     private var requestedStop = false
     private var consecutiveDecodeFailures = 0
+    private var stateHandler: (@MainActor @Sendable (LiveConnectionState) -> Void)?
 
     init(connection: ServerConnection, session: URLSession = .shared) {
         self.connection = connection
         self.session = session
     }
 
-    func start(onSnapshot: @escaping @MainActor (LiveSnapshot) -> Void) {
+    func start(
+        onState: @escaping @MainActor @Sendable (LiveConnectionState) -> Void,
+        onSnapshot: @escaping @MainActor @Sendable (LiveSnapshot) -> Void
+    ) {
         stop()
+        stateHandler = onState
         requestedStop = false
-        state = .connecting
+        publish(.connecting)
         receiveTask = Task { [weak self] in
             await self?.run(onSnapshot: onSnapshot)
         }
@@ -47,10 +55,11 @@ final class LiveWebSocketClient: ObservableObject, LiveStreaming {
         receiveTask = nil
         socket?.cancel(with: .normalClosure, reason: nil)
         socket = nil
-        state = .idle
+        publish(.idle)
+        stateHandler = nil
     }
 
-    private func run(onSnapshot: @escaping @MainActor (LiveSnapshot) -> Void) async {
+    private func run(onSnapshot: @escaping @MainActor @Sendable (LiveSnapshot) -> Void) async {
         var attempt = 0
         while !Task.isCancelled && !requestedStop {
             do {
@@ -58,7 +67,7 @@ final class LiveWebSocketClient: ObservableObject, LiveStreaming {
                 let task = session.webSocketTask(with: request)
                 socket = task
                 task.resume()
-                state = .connected
+                publish(.connected)
                 consecutiveDecodeFailures = 0
                 while !Task.isCancelled && !requestedStop {
                     let message = try await task.receive()
@@ -84,21 +93,26 @@ final class LiveWebSocketClient: ObservableObject, LiveStreaming {
                     }
                 }
             } catch let error as NetworkError where error == .incompatibleData {
-                state = .failed(error)
+                publish(.failed(error))
                 return
             } catch {
                 if requestedStop || Task.isCancelled {
                     return
                 }
                 if socket?.closeCode.rawValue == 4401 {
-                    state = .failed(.pairingExpired)
+                    publish(.failed(.pairingExpired))
                     return
                 }
                 attempt += 1
-                state = .reconnecting(attempt: attempt)
+                publish(.reconnecting(attempt: attempt))
                 let delay = min(8, 1 << min(attempt - 1, 3))
                 try? await Task.sleep(for: .seconds(delay))
             }
         }
+    }
+
+    private func publish(_ newState: LiveConnectionState) {
+        state = newState
+        stateHandler?(newState)
     }
 }
