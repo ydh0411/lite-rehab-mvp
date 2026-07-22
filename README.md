@@ -477,7 +477,9 @@ The current suite collects **91 Python tests** and runs **4 C host-test executab
 
 ## Native iPhone app (iOS 17+)
 
-The first native SwiftUI app is in `ios/`. It uses Stanford Spezi for the app lifecycle and provides portrait Live, History, Report/PDF, and Settings experiences. The Mac remains the hardware and inference host; the iPhone connects over the same trusted Wi-Fi network using an authenticated QR pairing code.
+The native SwiftUI app is in `ios/`. It reuses Stanford Spezi onboarding and task-flow composition in a portrait, English-only iPhone experience. The two primary tabs are **Live** and **History**; **Settings** opens from the gear button in the top-right corner. The Mac remains the hardware, inference, recording, and full-report host, while the iPhone provides guided setup, training, and review over an authenticated local-network connection.
+
+The Live flow is **Preflight → 3-2-1 baseline → Active Training → Completion**. Mac and serial motion-sensor connections are required. Wireless camera, ECG, and ML feedback are optional: if any are unavailable, the user must explicitly choose **Start Anyway**. During training, camera requests use adaptive retry and the session stays active through temporary camera loss or Mac reconnection.
 
 ### Build and install
 
@@ -488,13 +490,32 @@ The first native SwiftUI app is in `ios/`. It uses Stanford Spezi for the app li
 5. Open `ios/LiteRehab.xcodeproj`, select the **LiteRehab** target, choose your Personal Team under **Signing & Capabilities**, and use a unique bundle identifier if Xcode requests one.
 6. Connect an iPhone, enable Developer Mode when prompted, select it as the run destination, and press Run. Repeat on each team iPhone.
 
-Start the Mac service from the repository root:
+For the final wireless-hardware demo on the current hotspot addresses, start the Mac service with:
 
 ```bash
-./scripts/start_ios_demo.sh 0
+LITEREHAB_DIR="/Users/yuedonghan/Desktop/BMEG3920_project/lite_rehab_mvp/.worktrees/codex-ios-native-app"
+MAC_IP="172.20.10.14"
+CAMERA_RTSP="rtsp://172.20.10.5:8554/live"
+
+cd "$LITEREHAB_DIR" || exit 1
+conda activate literehab
+python -m pip install -r python/requirements.txt
+
+PYTHONPATH="$LITEREHAB_DIR/python" \
+python "$LITEREHAB_DIR/python/run_web_dashboard.py" \
+  --host 0.0.0.0 \
+  --web-port 8000 \
+  --mobile \
+  --advertised-host "$MAC_IP" \
+  --no-browser \
+  --port auto \
+  --camera-source "$CAMERA_RTSP" \
+  --side right \
+  --sessions-dir "$LITEREHAB_DIR/python/sessions" \
+  --model "$LITEREHAB_DIR/python/models/imu_cnnbigru.pt"
 ```
 
-Replace `0` with a camera index or stream URL. Keep the Mac and iPhone on the same Wi-Fi, then scan the terminal QR code in the app. A free Apple Personal Team profile normally expires after seven days; rebuild from Xcode to reinstall. App Store submission is not required for this team demo.
+Update both IP addresses if the hotspot assigns new ones. The MaixCAM console may print `rtsp://0.0.0.0:8554/live`; on the Mac, use the camera's reachable LAN IP instead. Keep the Mac, MaixCAM, and iPhone on the same trusted network, scan the terminal QR code, and leave this command running so the Mac dashboard and phone remain synchronized. A free Apple Personal Team profile normally expires after seven days; rebuild from Xcode to reinstall. App Store submission is not required for this team demo.
 
 The mobile token is stored in the iPhone Keychain. The generated Mac token/QR files are local, ignored by Git, and should not be shared publicly.
 

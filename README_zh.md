@@ -470,7 +470,9 @@ PYTHON=python ./scripts/test_all.sh
 
 ## 原生 iPhone App（iOS 17+）
 
-第一版原生 SwiftUI App 位于 `ios/`，使用 Stanford Spezi 管理 App 生命周期，提供竖屏的 Live、History、Report/PDF 与 Settings 界面。Mac 仍负责硬件连接和模型推理；iPhone 在同一个可信 Wi-Fi 内，通过带访问令牌的二维码安全配对。
+原生 SwiftUI App 位于 `ios/`，复用 Stanford Spezi 的 onboarding 与任务流程设计，保持竖屏、全英文。底部只保留 **Live** 和 **History** 两个主要标签，**Settings** 从右上角齿轮打开。Mac 仍负责硬件、推理、记录与完整报告；iPhone 通过带访问令牌的本地网络连接，负责引导式准备、训练与回顾。
+
+Live 的真实流程为 **Preflight → 3-2-1 baseline → Active Training → Completion**。Mac 与串口动作传感器属于必需条件；无线相机、ECG、ML feedback 属于可选条件，缺失时必须明确点击 **Start Anyway**。训练期间相机会自适应降频重试；相机短暂中断或 Mac 重连不会错误结束当前 Session。
 
 ### 构建并安装到几台 iPhone
 
@@ -481,13 +483,32 @@ PYTHON=python ./scripts/test_all.sh
 5. 打开 `ios/LiteRehab.xcodeproj`，在 **LiteRehab → Signing & Capabilities** 选择自己的 Personal Team；若 Xcode 提示冲突，改成唯一的 Bundle Identifier。
 6. 连接 iPhone，按提示开启 Developer Mode，在 Xcode 顶部选择该手机并点击 Run；其他组员手机重复此步骤。
 
-回到仓库根目录启动 Mac 服务：
+当前热点地址下，最终无线硬件 demo 使用以下完整命令：
 
 ```bash
-./scripts/start_ios_demo.sh 0
+LITEREHAB_DIR="/Users/yuedonghan/Desktop/BMEG3920_project/lite_rehab_mvp/.worktrees/codex-ios-native-app"
+MAC_IP="172.20.10.14"
+CAMERA_RTSP="rtsp://172.20.10.5:8554/live"
+
+cd "$LITEREHAB_DIR" || exit 1
+conda activate literehab
+python -m pip install -r python/requirements.txt
+
+PYTHONPATH="$LITEREHAB_DIR/python" \
+python "$LITEREHAB_DIR/python/run_web_dashboard.py" \
+  --host 0.0.0.0 \
+  --web-port 8000 \
+  --mobile \
+  --advertised-host "$MAC_IP" \
+  --no-browser \
+  --port auto \
+  --camera-source "$CAMERA_RTSP" \
+  --side right \
+  --sessions-dir "$LITEREHAB_DIR/python/sessions" \
+  --model "$LITEREHAB_DIR/python/models/imu_cnnbigru.pt"
 ```
 
-`0` 可替换成摄像头编号或视频流 URL。Mac 和 iPhone 必须在同一 Wi-Fi，然后在 App 内扫描终端二维码。课程演示不需要提交 App Store。免费的 Apple Personal Team 签名通常 7 天后过期，到期后用 Xcode 重新 Run 即可。
+热点重新分配地址后要同时修改两个 IP。MaixCAM 终端即使显示 `rtsp://0.0.0.0:8554/live`，Mac 端也必须填写相机在局域网中可访问的真实 IP。Mac、MaixCAM 与 iPhone 要处于同一个可信网络；扫描终端二维码后保持命令运行，电脑 Dashboard 与手机才会持续同步。课程演示不需要提交 App Store。免费的 Apple Personal Team 签名通常 7 天后过期，到期后用 Xcode 重新 Run 即可。
 
 iPhone 令牌保存在 Keychain；Mac 生成的令牌和二维码文件只保存在本机并已被 Git 忽略，不应公开分享。
 
