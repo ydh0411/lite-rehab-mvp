@@ -19,10 +19,9 @@ struct MetricCard: View {
             }
             Text(value)
                 .font(.title3.bold())
-                .lineLimit(2)
-                .minimumScaleFactor(0.75)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .liteRehabCard()
         .accessibilityElement(children: .combine)
     }

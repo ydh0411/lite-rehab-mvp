@@ -36,7 +36,9 @@ struct ConnectedAppView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
-                LiveView(store: liveStore)
+                LiveView(store: liveStore) {
+                    selectedTab = .history
+                }
                     .toolbar { settingsToolbar }
             }
             .tabItem { Label("Live", systemImage: "waveform.path.ecg") }

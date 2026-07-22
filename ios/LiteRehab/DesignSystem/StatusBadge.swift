@@ -12,6 +12,7 @@ struct StatusBadge: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
             .background(color.opacity(0.12), in: Capsule())
+            .frame(minHeight: 44)
             .accessibilityLabel(title)
     }
 }
