@@ -14,12 +14,28 @@ protocol CameraFrameLoading: AnyObject {
 @MainActor
 final class CameraFrameClient: CameraFrameLoading {
     private let connection: ServerConnection
-    private let session: URLSession
+    private let fetch: @Sendable (URLRequest) async throws -> (Data, URLResponse)
+    private let sleep: @Sendable (Duration) async throws -> Void
     private var pollingTask: Task<Void, Never>?
 
     init(connection: ServerConnection, session: URLSession = .shared) {
         self.connection = connection
-        self.session = session
+        self.fetch = { request in
+            try await session.data(for: request)
+        }
+        self.sleep = { delay in
+            try await Task.sleep(for: delay)
+        }
+    }
+
+    init(
+        connection: ServerConnection,
+        fetch: @escaping @Sendable (URLRequest) async throws -> (Data, URLResponse),
+        sleep: @escaping @Sendable (Duration) async throws -> Void
+    ) {
+        self.connection = connection
+        self.fetch = fetch
+        self.sleep = sleep
     }
 
     func start(
@@ -29,10 +45,12 @@ final class CameraFrameClient: CameraFrameLoading {
         stop()
         pollingTask = Task { [weak self] in
             guard let self else { return }
+            var retryPolicy = CameraRetryPolicy()
             while !Task.isCancelled {
+                let delay: Duration
                 do {
                     let request = try RequestFactory(connection: connection).request(for: .cameraJPEG)
-                    let (data, response) = try await session.data(for: request)
+                    let (data, response) = try await fetch(request)
                     guard let httpResponse = response as? HTTPURLResponse else {
                         throw NetworkError.invalidResponse
                     }
@@ -45,12 +63,21 @@ final class CameraFrameClient: CameraFrameLoading {
                         throw NetworkError.invalidImage
                     }
                     onFrame(image)
+                    delay = retryPolicy.recordSuccess()
                 } catch is CancellationError {
                     return
                 } catch {
-                    onError(error)
+                    let failure = retryPolicy.recordFailure()
+                    if failure.shouldReport {
+                        onError(error)
+                    }
+                    delay = failure.delay
                 }
-                try? await Task.sleep(for: .milliseconds(125))
+                do {
+                    try await sleep(delay)
+                } catch {
+                    return
+                }
             }
         }
     }
