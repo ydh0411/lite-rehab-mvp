@@ -22,6 +22,26 @@ Copyright (c) Stanford University and the project authors.
 
 SpeziViews is distributed under the MIT License. The permission and warranty terms above apply.
 
+## Stanford SpeziOnboarding
+
+Repository: https://github.com/StanfordSpezi/SpeziOnboarding
+
+Version: 2.0.4
+
+Copyright (c) Stanford University and the project authors.
+
+SpeziOnboarding is distributed under the MIT License. The permission and warranty terms above apply. LiteRehab uses its onboarding page composition for the local Mac pairing experience.
+
+## Stanford Spezi Template Application
+
+Repository: https://github.com/StanfordSpezi/SpeziTemplateApplication
+
+Design reference commit: d52014a54cbfe68ef1f1c364e81a97edecf5e4a8
+
+Copyright (c) 2023 Stanford University.
+
+The Spezi Template Application is distributed under the MIT License. The permission and warranty terms above apply. LiteRehab adapts its native navigation, onboarding, task-flow, and information hierarchy conventions; unrelated scheduling, contacts, Firebase, and cloud features are not included.
+
 ## Design references
 
 Apple CareKit informed general healthcare-interface conventions. CareKit code is not included as an application dependency.

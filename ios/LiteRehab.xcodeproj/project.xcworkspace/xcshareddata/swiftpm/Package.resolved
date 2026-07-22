@@ -1,5 +1,5 @@
 {
-  "originHash" : "ed6e0f68b549b4e1829710dbce9e98ef47bb200e777fd2a29f1385067cb3da52",
+  "originHash" : "71e13315343aedfa4ebef12e9c00d6625a70cc04219d3586242f585be943c295",
   "pins" : [
     {
       "identity" : "networkimage",
@@ -26,6 +26,15 @@
       "state" : {
         "revision" : "09b0a95cef41e42e494f74f395d83a4dc9c6d159",
         "version" : "2.7.7"
+      }
+    },
+    {
+      "identity" : "spezionboarding",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/StanfordSpezi/SpeziOnboarding.git",
+      "state" : {
+        "revision" : "1b1c0f685dc7416b1ce81ffaa17bb12486626731",
+        "version" : "2.0.4"
       }
     },
     {

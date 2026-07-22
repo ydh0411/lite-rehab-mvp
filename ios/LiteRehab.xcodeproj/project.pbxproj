@@ -14,6 +14,7 @@
 		27DC144D51B13E64ACE6A8FF /* ReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C364B1AC71DB838307196446 /* ReportView.swift */; };
 		30C945FEABA85C053042DC4F /* ReportStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13996A22065DE61519B68752 /* ReportStore.swift */; };
 		34EDCEAD926076265C779438 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 415F485DD392668CFE5CAC16 /* StatusBadge.swift */; };
+		368ED48CDE817CFCA1FB7038 /* LivePresentationModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B29435757A393E3BAD9EE402 /* LivePresentationModelsTests.swift */; };
 		38E6E42BABE45414AE87F004 /* SpeziViews in Frameworks */ = {isa = PBXBuildFile; productRef = 105A343DF33AE86FBF737D6D /* SpeziViews */; };
 		3A342A7A7C92D57B3E44E057 /* ReportPDFRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E9E8C8D10BEDA9C2C925B0C /* ReportPDFRendererTests.swift */; };
 		3C68E5673B354A35633BDA0D /* CameraFrameClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5E1EA997BC947153FB764C3 /* CameraFrameClient.swift */; };
@@ -25,6 +26,7 @@
 		66CAA014DDCF4FEE0D7B536D /* ConnectionVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96EA3CC7A853A7449F5375FE /* ConnectionVault.swift */; };
 		6DE6A40BBA7BA8E8D47FA5EB /* HistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7733171FCE4248E9F4618C10 /* HistoryStore.swift */; };
 		6FC9133ABC96CFA192499277 /* QRCodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 654FF6EA08C8585172635584 /* QRCodeScannerView.swift */; };
+		757F9C3E3B9AA03241695D80 /* FeedbackPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA3BBD9A97909AB633DF2AB1 /* FeedbackPresentation.swift */; };
 		7CA731C60358BFC591F82970 /* ReportPDFRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F6C87396E0BC50F90015EA6 /* ReportPDFRenderer.swift */; };
 		7EE22D98CCFEC375ECC173EB /* ReportChartsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AFE718A666B5BD39293C8F4 /* ReportChartsView.swift */; };
 		858CCF0D5B3E068E2E63BCCE /* LiteRehabStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60D8B5C061071968FA57586 /* LiteRehabStyle.swift */; };
@@ -36,9 +38,12 @@
 		9DF5A98F3848C988EC0570AE /* LiteRehabApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6BAF969161C714B8D2B401E /* LiteRehabApp.swift */; };
 		A0659386F8BDA3147F53A4A3 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34624A80F8CF7F9664736601 /* SettingsView.swift */; };
 		A477A170202C55DDA2AB432A /* MetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC7146F5545150079E17B99 /* MetricCard.swift */; };
+		A863E124EEF481B811D2B23F /* SessionFlowState.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADAA0524D14E5C4287AF7954 /* SessionFlowState.swift */; };
 		B4CD3AB7ABAFE7B1296263C1 /* LiteRehabAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FCA0C4CD4575EB5D4C02795 /* LiteRehabAppDelegate.swift */; };
 		BC88E357AA82C3F84E813265 /* NetworkError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 983221C0A678EFBE847B80D1 /* NetworkError.swift */; };
 		BD86882F2FBF62344B33F5D0 /* LiveStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F54DF53CA065324FD5DB72F /* LiveStore.swift */; };
+		C1D46D0ACFEA213AA9AC77CF /* SpeziOnboarding in Frameworks */ = {isa = PBXBuildFile; productRef = 4D64A11029A8A96A3719DF1F /* SpeziOnboarding */; };
+		C461E169E66691701763CDC8 /* HardwareReadiness.swift in Sources */ = {isa = PBXBuildFile; fileRef = E76FC8832669340F529E17BD /* HardwareReadiness.swift */; };
 		C864D8E0C9286F8175F11B53 /* ConnectionVaultTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66BA206348B0103C55E40D19 /* ConnectionVaultTests.swift */; };
 		D908814CC087CB62587E9149 /* StartSessionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5130318CC4007B802BDD3749 /* StartSessionSheet.swift */; };
 		E1B5D6766C5175C6913443CA /* LiveWebSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA5B2C01D9F45820F7AD0C50 /* LiveWebSocketClient.swift */; };
@@ -93,6 +98,8 @@
 		983221C0A678EFBE847B80D1 /* NetworkError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkError.swift; sourceTree = "<group>"; };
 		9F54DF53CA065324FD5DB72F /* LiveStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveStore.swift; sourceTree = "<group>"; };
 		A99A139F8DC2A89A28F19B9D /* AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootView.swift; sourceTree = "<group>"; };
+		ADAA0524D14E5C4287AF7954 /* SessionFlowState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionFlowState.swift; sourceTree = "<group>"; };
+		B29435757A393E3BAD9EE402 /* LivePresentationModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePresentationModelsTests.swift; sourceTree = "<group>"; };
 		B60D8B5C061071968FA57586 /* LiteRehabStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiteRehabStyle.swift; sourceTree = "<group>"; };
 		BA5B2C01D9F45820F7AD0C50 /* LiveWebSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveWebSocketClient.swift; sourceTree = "<group>"; };
 		C364B1AC71DB838307196446 /* ReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportView.swift; sourceTree = "<group>"; };
@@ -103,6 +110,8 @@
 		CF0BFFD293E6174D9143067C /* NavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationTests.swift; sourceTree = "<group>"; };
 		D2DBDB02E76A8B7C89FED59F /* AcknowledgementsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AcknowledgementsView.swift; sourceTree = "<group>"; };
 		D6BAF969161C714B8D2B401E /* LiteRehabApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiteRehabApp.swift; sourceTree = "<group>"; };
+		DA3BBD9A97909AB633DF2AB1 /* FeedbackPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackPresentation.swift; sourceTree = "<group>"; };
+		E76FC8832669340F529E17BD /* HardwareReadiness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareReadiness.swift; sourceTree = "<group>"; };
 		EAB6B06AB1EC842A99CD8A02 /* THIRD_PARTY_NOTICES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = THIRD_PARTY_NOTICES.md; sourceTree = "<group>"; };
 		F68A4E31605BF828D0FC7F52 /* SessionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -115,6 +124,7 @@
 				47A85669D5275F9E3A6EDEA8 /* LiteRehabCore in Frameworks */,
 				FC1DA00D5065E25863556FFA /* Spezi in Frameworks */,
 				38E6E42BABE45414AE87F004 /* SpeziViews in Frameworks */,
+				C1D46D0ACFEA213AA9AC77CF /* SpeziOnboarding in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -155,6 +165,7 @@
 			children = (
 				50DF473DCA16A4F3D6B0C512 /* APIClientTests.swift */,
 				66BA206348B0103C55E40D19 /* ConnectionVaultTests.swift */,
+				B29435757A393E3BAD9EE402 /* LivePresentationModelsTests.swift */,
 				3E9E8C8D10BEDA9C2C925B0C /* ReportPDFRendererTests.swift */,
 			);
 			path = LiteRehabTests;
@@ -261,8 +272,11 @@
 			isa = PBXGroup;
 			children = (
 				51D59A892877A94C05957734 /* ECGTraceView.swift */,
+				DA3BBD9A97909AB633DF2AB1 /* FeedbackPresentation.swift */,
+				E76FC8832669340F529E17BD /* HardwareReadiness.swift */,
 				9F54DF53CA065324FD5DB72F /* LiveStore.swift */,
 				5B5FF5D48A7110F0BEE8D76D /* LiveView.swift */,
+				ADAA0524D14E5C4287AF7954 /* SessionFlowState.swift */,
 				5130318CC4007B802BDD3749 /* StartSessionSheet.swift */,
 			);
 			path = Live;
@@ -335,6 +349,7 @@
 				6F4AA41E0E8117C2C95B8C69 /* LiteRehabCore */,
 				6148CD2668E7951C328158C8 /* Spezi */,
 				105A343DF33AE86FBF737D6D /* SpeziViews */,
+				4D64A11029A8A96A3719DF1F /* SpeziOnboarding */,
 			);
 			productName = LiteRehab;
 			productReference = C835BD8047455636350D3041 /* LiteRehab.app */;
@@ -368,6 +383,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				1C545CFAFBDC2153914D6829 /* XCRemoteSwiftPackageReference "Spezi" */,
+				7EF048377937F0AA7D673A8F /* XCRemoteSwiftPackageReference "SpeziOnboarding" */,
 				CD6551656538745C9739CAA3 /* XCRemoteSwiftPackageReference "SpeziViews" */,
 				89E33469FE82CD9D119189A2 /* XCLocalSwiftPackageReference "LiteRehabCore" */,
 			);
@@ -402,6 +418,7 @@
 			files = (
 				522F9CA9545E561662CA4FC5 /* APIClientTests.swift in Sources */,
 				C864D8E0C9286F8175F11B53 /* ConnectionVaultTests.swift in Sources */,
+				368ED48CDE817CFCA1FB7038 /* LivePresentationModelsTests.swift in Sources */,
 				3A342A7A7C92D57B3E44E057 /* ReportPDFRendererTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -416,6 +433,8 @@
 				3C68E5673B354A35633BDA0D /* CameraFrameClient.swift in Sources */,
 				66CAA014DDCF4FEE0D7B536D /* ConnectionVault.swift in Sources */,
 				87D604DA82811E668E928880 /* ECGTraceView.swift in Sources */,
+				757F9C3E3B9AA03241695D80 /* FeedbackPresentation.swift in Sources */,
+				C461E169E66691701763CDC8 /* HardwareReadiness.swift in Sources */,
 				6DE6A40BBA7BA8E8D47FA5EB /* HistoryStore.swift in Sources */,
 				E64851CB3DC596054CE6DCBF /* HistoryView.swift in Sources */,
 				9DF5A98F3848C988EC0570AE /* LiteRehabApp.swift in Sources */,
@@ -434,6 +453,7 @@
 				30C945FEABA85C053042DC4F /* ReportStore.swift in Sources */,
 				27DC144D51B13E64ACE6A8FF /* ReportView.swift in Sources */,
 				52F27AAA8C1A68C8F2E1C7C4 /* SessionCard.swift in Sources */,
+				A863E124EEF481B811D2B23F /* SessionFlowState.swift in Sources */,
 				A0659386F8BDA3147F53A4A3 /* SettingsView.swift in Sources */,
 				D908814CC087CB62587E9149 /* StartSessionSheet.swift in Sources */,
 				34EDCEAD926076265C779438 /* StatusBadge.swift in Sources */,
@@ -754,6 +774,14 @@
 				version = 1.10.2;
 			};
 		};
+		7EF048377937F0AA7D673A8F /* XCRemoteSwiftPackageReference "SpeziOnboarding" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/StanfordSpezi/SpeziOnboarding.git";
+			requirement = {
+				kind = exactVersion;
+				version = 2.0.4;
+			};
+		};
 		CD6551656538745C9739CAA3 /* XCRemoteSwiftPackageReference "SpeziViews" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/StanfordSpezi/SpeziViews.git";
@@ -769,6 +797,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = CD6551656538745C9739CAA3 /* XCRemoteSwiftPackageReference "SpeziViews" */;
 			productName = SpeziViews;
+		};
+		4D64A11029A8A96A3719DF1F /* SpeziOnboarding */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7EF048377937F0AA7D673A8F /* XCRemoteSwiftPackageReference "SpeziOnboarding" */;
+			productName = SpeziOnboarding;
 		};
 		6148CD2668E7951C328158C8 /* Spezi */ = {
 			isa = XCSwiftPackageProductDependency;
