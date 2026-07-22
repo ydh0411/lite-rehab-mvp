@@ -18,6 +18,7 @@
 		34EDCEAD926076265C779438 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 415F485DD392668CFE5CAC16 /* StatusBadge.swift */; };
 		368ED48CDE817CFCA1FB7038 /* LivePresentationModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B29435757A393E3BAD9EE402 /* LivePresentationModelsTests.swift */; };
 		38E6E42BABE45414AE87F004 /* SpeziViews in Frameworks */ = {isa = PBXBuildFile; productRef = 105A343DF33AE86FBF737D6D /* SpeziViews */; };
+		3972D916062120981CA37EF5 /* AppDependencyFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC3E5163BA23E9D7F4CDB712 /* AppDependencyFactory.swift */; };
 		39A345E7D5CC11358577CAD3 /* CameraRetryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B996E9B534AB2D23563F6068 /* CameraRetryPolicy.swift */; };
 		3A342A7A7C92D57B3E44E057 /* ReportPDFRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E9E8C8D10BEDA9C2C925B0C /* ReportPDFRendererTests.swift */; };
 		3C68E5673B354A35633BDA0D /* CameraFrameClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5E1EA997BC947153FB764C3 /* CameraFrameClient.swift */; };
@@ -43,6 +44,7 @@
 		A0659386F8BDA3147F53A4A3 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34624A80F8CF7F9664736601 /* SettingsView.swift */; };
 		A477A170202C55DDA2AB432A /* MetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC7146F5545150079E17B99 /* MetricCard.swift */; };
 		A863E124EEF481B811D2B23F /* SessionFlowState.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADAA0524D14E5C4287AF7954 /* SessionFlowState.swift */; };
+		AFACE0631DBDE0EABF277A42 /* ConnectedAppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D43923866A8AA91F54B800E /* ConnectedAppView.swift */; };
 		B4CD3AB7ABAFE7B1296263C1 /* LiteRehabAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FCA0C4CD4575EB5D4C02795 /* LiteRehabAppDelegate.swift */; };
 		BC88E357AA82C3F84E813265 /* NetworkError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 983221C0A678EFBE847B80D1 /* NetworkError.swift */; };
 		BD86882F2FBF62344B33F5D0 /* LiveStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F54DF53CA065324FD5DB72F /* LiveStore.swift */; };
@@ -100,6 +102,7 @@
 		7B4D90187D07DCC89DC1D693 /* LiteRehabUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LiteRehabUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		874634F126295CD76F39E13E /* CameraRetryPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraRetryPolicyTests.swift; sourceTree = "<group>"; };
 		8AC7146F5545150079E17B99 /* MetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCard.swift; sourceTree = "<group>"; };
+		8D43923866A8AA91F54B800E /* ConnectedAppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectedAppView.swift; sourceTree = "<group>"; };
 		8E8B84F5DE63EEDC0B07E9EF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		91A280E59BEE818EDE4728FF /* PairingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairingView.swift; sourceTree = "<group>"; };
 		96EA3CC7A853A7449F5375FE /* ConnectionVault.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionVault.swift; sourceTree = "<group>"; };
@@ -125,6 +128,7 @@
 		E76FC8832669340F529E17BD /* HardwareReadiness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareReadiness.swift; sourceTree = "<group>"; };
 		E9475135370C7CF8978F6C7F /* FeedbackHaptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackHaptics.swift; sourceTree = "<group>"; };
 		EAB6B06AB1EC842A99CD8A02 /* THIRD_PARTY_NOTICES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = THIRD_PARTY_NOTICES.md; sourceTree = "<group>"; };
+		EC3E5163BA23E9D7F4CDB712 /* AppDependencyFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDependencyFactory.swift; sourceTree = "<group>"; };
 		F68A4E31605BF828D0FC7F52 /* SessionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -146,7 +150,9 @@
 		0675E716206EA5E06A432DF2 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				EC3E5163BA23E9D7F4CDB712 /* AppDependencyFactory.swift */,
 				A99A139F8DC2A89A28F19B9D /* AppRootView.swift */,
+				8D43923866A8AA91F54B800E /* ConnectedAppView.swift */,
 				D6BAF969161C714B8D2B401E /* LiteRehabApp.swift */,
 				5FCA0C4CD4575EB5D4C02795 /* LiteRehabAppDelegate.swift */,
 			);
@@ -458,9 +464,11 @@
 			files = (
 				6513D63F480EE43152AA9811 /* APIClient.swift in Sources */,
 				1FBC5AB82A20A772052B1241 /* AcknowledgementsView.swift in Sources */,
+				3972D916062120981CA37EF5 /* AppDependencyFactory.swift in Sources */,
 				860EB20DD2E469CDB8B99A35 /* AppRootView.swift in Sources */,
 				3C68E5673B354A35633BDA0D /* CameraFrameClient.swift in Sources */,
 				39A345E7D5CC11358577CAD3 /* CameraRetryPolicy.swift in Sources */,
+				AFACE0631DBDE0EABF277A42 /* ConnectedAppView.swift in Sources */,
 				66CAA014DDCF4FEE0D7B536D /* ConnectionVault.swift in Sources */,
 				87D604DA82811E668E928880 /* ECGTraceView.swift in Sources */,
 				96FCA300264A62EA5AE930D0 /* FeedbackHaptics.swift in Sources */,

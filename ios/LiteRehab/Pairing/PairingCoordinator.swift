@@ -31,7 +31,10 @@ final class PairingCoordinator: ObservableObject {
     ) {
         self.vault = vault
         self.session = session
-        if ProcessInfo.processInfo.arguments.contains("-fixture-paired") {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-fixture-unpaired") {
+            self.connection = nil
+        } else if arguments.contains("-fixture-paired") {
             self.connection = ServerConnection(
                 name: "Fixture Mac",
                 baseURL: URL(string: "http://127.0.0.1:8000")!,

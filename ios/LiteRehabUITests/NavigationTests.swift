@@ -2,22 +2,22 @@ import XCTest
 
 @MainActor
 final class NavigationTests: XCTestCase {
-    func testPairedAppShowsMainTabsAndAcknowledgements() {
+    func testPairedAppHasTwoPrimaryTabsAndSettingsToolbarButton() {
         let app = XCUIApplication()
-        app.launchArguments = ["-ui-testing", "-fixture-paired"]
+        app.launchArguments = ["-ui-testing", "-fixture-paired", "-fixture-live"]
         app.launch()
 
         XCTAssertTrue(app.tabBars.buttons["Live"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.tabBars.buttons["History"].exists)
+        XCTAssertFalse(app.tabBars.buttons["Settings"].exists)
+
+        let settings = app.buttons["Open Settings"]
+        XCTAssertTrue(settings.exists)
+        settings.tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 3))
+        app.buttons["Done"].tap()
+
         app.tabBars.buttons["History"].tap()
         XCTAssertTrue(app.navigationBars["History"].exists)
-        app.tabBars.buttons["Settings"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].exists)
-        let acknowledgements = app.buttons["Acknowledgements"]
-        if !acknowledgements.exists {
-            app.swipeUp()
-        }
-        XCTAssertTrue(acknowledgements.waitForExistence(timeout: 3))
-        acknowledgements.tap()
-        XCTAssertTrue(app.navigationBars["Acknowledgements"].exists)
     }
 }

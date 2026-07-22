@@ -21,9 +21,10 @@ struct SettingsView: View {
                 Button("Rescan QR Code") {
                     clearConnection()
                 }
-                Button("Clear Connection", role: .destructive) {
+                Button("Disconnect Mac", role: .destructive) {
                     confirmingClear = true
                 }
+                .accessibilityIdentifier("disconnect-mac")
                 .accessibilityHint("Removes the saved Mac address and secure access token")
             }
 
@@ -45,11 +46,11 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .confirmationDialog(
-            "Clear the saved Mac connection?",
+            "Disconnect from this Mac?",
             isPresented: $confirmingClear,
             titleVisibility: .visible
         ) {
-            Button("Clear Connection", role: .destructive) { clearConnection() }
+            Button("Disconnect Mac", role: .destructive) { clearConnection() }
         } message: {
             Text("You will need to scan the Mac QR code again.")
         }

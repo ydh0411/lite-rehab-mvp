@@ -1,3 +1,4 @@
+import SpeziOnboarding
 import SpeziViews
 import SwiftUI
 
@@ -9,42 +10,15 @@ struct PairingView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                LinearGradient(
-                    colors: [Color.indigo.opacity(0.18), Color.cyan.opacity(0.08), .clear],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+            OnboardingView {
+                OnboardingTitleView(
+                    title: "Guided rehabilitation, connected to your Mac",
+                    subtitle: "Follow a clear setup, training, and review flow on your iPhone"
                 )
-                .ignoresSafeArea()
-
-                ScrollView {
-                    VStack(spacing: 26) {
-                        Spacer(minLength: 44)
-                        Image(systemName: "figure.strengthtraining.traditional")
-                            .font(.system(size: 66, weight: .semibold))
-                            .foregroundStyle(.indigo)
-                            .accessibilityHidden(true)
-                        VStack(spacing: 10) {
-                            Text("LiteRehab")
-                                .font(.largeTitle.bold())
-                            Text("Your live rehabilitation companion")
-                                .font(.headline)
-                                .foregroundStyle(.secondary)
-                            Text("Start the mobile dashboard on your Mac, then scan the QR code to connect securely over the same Wi-Fi network.")
-                                .multilineTextAlignment(.center)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Button {
-                            showingScanner = true
-                        } label: {
-                            Label("Scan Mac QR Code", systemImage: "qrcode.viewfinder")
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 7)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
-
+            } content: {
+                VStack(spacing: 24) {
+                    OnboardingInformationView(areas: pairingAreas)
+                    VStack(spacing: 14) {
                         DisclosureGroup("Enter code manually") {
                             VStack(spacing: 12) {
                                 TextEditor(text: $manualCode)
@@ -65,17 +39,18 @@ struct PairingView: View {
                             .padding(.top, 10)
                         }
                         .tint(.primary)
+                        Text("Engineering prototype — not a medical device")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
                     }
-                    .padding(.horizontal, 28)
                 }
-
-                if viewState == .processing {
-                    Color.black.opacity(0.12).ignoresSafeArea()
-                    ProgressView("Connecting…")
-                        .padding(24)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+            } footer: {
+                OnboardingActionsView("Pair with Mac", viewState: $viewState) {
+                    showingScanner = true
                 }
             }
+            .padding(.top, 16)
             .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showingScanner) {
                 NavigationStack {
@@ -103,6 +78,26 @@ struct PairingView: View {
             }
             .viewStateAlert(state: $viewState)
         }
+    }
+
+    private var pairingAreas: [OnboardingInformationView.Area] {
+        [
+            OnboardingInformationView.Area(
+                icon: { Image(systemName: "qrcode.viewfinder").accessibilityHidden(true) },
+                title: "Pair once",
+                description: "Scan the QR code shown by LiteRehab on your Mac."
+            ),
+            OnboardingInformationView.Area(
+                icon: { Image(systemName: "iphone.and.arrow.forward").accessibilityHidden(true) },
+                title: "Stay synchronized",
+                description: "Your iPhone and Mac show the same live session state."
+            ),
+            OnboardingInformationView.Area(
+                icon: { Image(systemName: "lock.shield").accessibilityHidden(true) },
+                title: "Local network only",
+                description: "Session data stays on your trusted local network."
+            )
+        ]
     }
 
     private var scannerGuide: some View {
