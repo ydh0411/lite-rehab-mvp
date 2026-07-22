@@ -4,67 +4,80 @@ import SwiftUI
 struct SettingsView: View {
     let connection: ServerConnection
     @ObservedObject var pairing: PairingCoordinator
-    @State private var confirmingClear = false
+    @State private var confirmingDisconnect = false
     @State private var errorMessage: String?
 
     var body: some View {
         Form {
-            Section("Connection") {
+            Section("Paired Mac") {
                 LabeledContent("Status") {
                     Label("Connected", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(LiteRehabStyle.success)
                 }
-                LabeledContent("Service", value: connection.name)
-                LabeledContent("Address", value: connection.baseURL.absoluteString)
+                LabeledContent("Name", value: connection.name)
+                LabeledContent("Local address", value: connection.baseURL.host ?? connection.baseURL.absoluteString)
                     .font(.caption)
-                LabeledContent("API version", value: "1")
-                Button("Rescan QR Code") {
-                    clearConnection()
+
+                Button {
+                    disconnect()
+                } label: {
+                    Label("Repair Connection", systemImage: "qrcode.viewfinder")
                 }
+
                 Button("Disconnect Mac", role: .destructive) {
-                    confirmingClear = true
+                    confirmingDisconnect = true
                 }
                 .accessibilityIdentifier("disconnect-mac")
                 .accessibilityHint("Removes the saved Mac address and secure access token")
             }
 
-            Section("About") {
+            Section("About LiteRehab") {
                 LabeledContent("Version", value: appVersion)
-                NavigationLink("Acknowledgements") {
+                NavigationLink {
                     AcknowledgementsView()
+                } label: {
+                    Label("Open Source Acknowledgements", systemImage: "doc.text")
                 }
             }
 
-            Section("Important") {
-                Label {
-                    Text("LiteRehab is an engineering prototype for teaching and demonstration only. It is not a medical device and must not be used for diagnosis, monitoring, or treatment.")
-                } icon: {
-                    Image(systemName: "exclamationmark.shield.fill")
-                        .foregroundStyle(.orange)
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Engineering prototype — not a medical device", systemImage: "exclamationmark.shield.fill")
+                        .font(.headline)
+                        .foregroundStyle(LiteRehabStyle.warning)
+                    Text("For teaching and demonstration only. Do not use LiteRehab for diagnosis, monitoring, or treatment.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
+                .padding(.vertical, 4)
+                .accessibilityElement(children: .contain)
             }
         }
         .navigationTitle("Settings")
         .confirmationDialog(
             "Disconnect from this Mac?",
-            isPresented: $confirmingClear,
+            isPresented: $confirmingDisconnect,
             titleVisibility: .visible
         ) {
-            Button("Disconnect Mac", role: .destructive) { clearConnection() }
+            Button("Disconnect Mac", role: .destructive) { disconnect() }
         } message: {
             Text("You will need to scan the Mac QR code again.")
         }
-        .alert("Could Not Clear Connection", isPresented: Binding(
+        .alert("Could Not Disconnect", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
-        )) { Button("OK", role: .cancel) {} } message: { Text(errorMessage ?? "") }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(errorMessage ?? "")
+        }
     }
 
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
     }
 
-    private func clearConnection() {
+    private func disconnect() {
         do { try pairing.disconnect() }
         catch { errorMessage = error.localizedDescription }
     }

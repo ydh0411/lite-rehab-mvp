@@ -5,53 +5,49 @@ struct SessionCard: View {
     let session: SessionSummary
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 13) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(session.subject.isEmpty ? "Unnamed participant" : session.subject)
-                        .font(.headline)
-                    Text(formattedDate(session.startedAt))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(.tertiary)
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(session.subject.isEmpty ? "Unnamed participant" : session.subject)
+                    .font(.headline)
+                Text(formattedDate(session.startedAt))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
-            HStack(spacing: 8) {
-                ForEach(session.exercises, id: \.self) { exercise in
-                    Text(exercise.capitalized)
-                        .font(.caption.weight(.medium))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 5)
-                        .background(Color.indigo.opacity(0.1), in: Capsule())
-                }
-            }
-            HStack {
-                summaryItem("Reps", "\(session.repetitions)")
-                Divider()
-                summaryItem("Duration", durationText(session.durationS))
-                Divider()
-                summaryItem("Good form", session.goodFormPercent.map { "\(Int($0.rounded()))%" } ?? "Not available")
-            }
-            if !session.warnings.isEmpty {
-                Label("\(session.warnings.count) data warning\(session.warnings.count == 1 ? "" : "s")", systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-            }
-        }
-        .liteRehabCard()
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Session for \(session.subject), \(session.repetitions) repetitions")
-        .accessibilityHint("Opens the session report")
-    }
 
-    private func summaryItem(_ title: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(title).font(.caption2).foregroundStyle(.secondary)
-            Text(value).font(.caption.weight(.semibold)).lineLimit(1)
+            if !session.exercises.isEmpty {
+                Label(
+                    session.exercises.map { $0.capitalized }.joined(separator: " · "),
+                    systemImage: "figure.strengthtraining.traditional"
+                )
+                .font(.subheadline)
+                .foregroundStyle(LiteRehabStyle.accent)
+            }
+
+            HStack(spacing: 12) {
+                Label("\(session.repetitions) reps", systemImage: "repeat")
+                Label(durationText(session.durationS), systemImage: "clock")
+                if let goodForm = session.goodFormPercent {
+                    Label("\(Int(goodForm.rounded()))%", systemImage: "checkmark.seal")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            if !session.warnings.isEmpty {
+                Label(
+                    "\(session.warnings.count) data warning\(session.warnings.count == 1 ? "" : "s")",
+                    systemImage: "exclamationmark.triangle.fill"
+                )
+                .font(.caption)
+                .foregroundStyle(LiteRehabStyle.warning)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 5)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "Session for \(session.subject), \(session.repetitions) repetitions, \(durationText(session.durationS))"
+        )
+        .accessibilityHint("Opens the session report")
     }
 }
 

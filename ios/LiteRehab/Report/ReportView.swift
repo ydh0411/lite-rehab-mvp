@@ -14,7 +14,7 @@ struct ReportView: View {
                 loadingContent
             }
         }
-        .background(Color(uiColor: .secondarySystemBackground))
+        .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle("Session Report")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -87,7 +87,7 @@ struct ReportView: View {
 
     private func quality(_ report: SessionReport) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Movement Quality").font(.headline)
+            Text("Movement quality").font(.headline)
             ForEach(report.qualityCounts.keys.sorted(), id: \.self) { key in
                 HStack {
                     Text(key.replacingOccurrences(of: "_", with: " ").capitalized)
@@ -101,7 +101,7 @@ struct ReportView: View {
 
     private func completeness(_ report: SessionReport) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Data Completeness").font(.headline)
+            Text("Data completeness").font(.headline)
             HStack {
                 StatusBadge(title: "IMU \(ReportFormatting.percent(report.serialCompletenessPercent))", systemImage: "gyroscope", color: .indigo)
                 StatusBadge(title: "Pose \(ReportFormatting.percent(report.poseCompletenessPercent))", systemImage: "figure.walk", color: .cyan)

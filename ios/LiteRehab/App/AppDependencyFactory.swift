@@ -33,7 +33,15 @@ struct AppDependencies {
         let state: LiveConnectionState = arguments.contains("-fixture-reconnecting")
             ? .reconnecting(attempt: 2)
             : .connected
-        let api = FixtureAPIClient(snapshot: snapshot)
+        let historyMode: FixtureAPIClient.HistoryMode
+        if arguments.contains("-fixture-history-empty") {
+            historyMode = .empty
+        } else if arguments.contains("-fixture-history-error") {
+            historyMode = .error
+        } else {
+            historyMode = .content
+        }
+        let api = FixtureAPIClient(snapshot: snapshot, historyMode: historyMode)
         return AppDependencies(
             api: api,
             stream: FixtureLiveStream(state: state, snapshot: snapshot),
@@ -96,10 +104,18 @@ private final class FixtureLiveStream: LiveStreaming {
 }
 
 private actor FixtureAPIClient: APIClientProtocol {
-    private var snapshot: LiveSnapshot
+    enum HistoryMode: Equatable {
+        case content
+        case empty
+        case error
+    }
 
-    init(snapshot: LiveSnapshot) {
+    private var snapshot: LiveSnapshot
+    private let historyMode: HistoryMode
+
+    init(snapshot: LiveSnapshot, historyMode: HistoryMode) {
         self.snapshot = snapshot
+        self.historyMode = historyMode
     }
 
     func health() async throws -> MobileHealth {
@@ -109,7 +125,13 @@ private actor FixtureAPIClient: APIClientProtocol {
     func status() async throws -> LiveSnapshot { snapshot }
 
     func sessions() async throws -> [SessionSummary] {
-        [
+        if historyMode == .error {
+            throw NetworkError.transport("Fixture history server is unavailable.")
+        }
+        if historyMode == .empty {
+            return []
+        }
+        return [
             SessionSummary(
                 sessionID: "DEMO-2026-07-22",
                 subject: "Participant 01",
