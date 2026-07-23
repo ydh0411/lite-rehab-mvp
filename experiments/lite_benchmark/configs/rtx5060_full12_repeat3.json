@@ -1,0 +1,21 @@
+{
+  "models": [
+    "imu_cnn",
+    "imu_cnn_bigru",
+    "pose_cnn_bigru",
+    "early_fusion",
+    "gated_fusion",
+    "lite_actionmae"
+  ],
+  "epochs": 8,
+  "seeds": [7, 17, 27],
+  "batch_size": 64,
+  "learning_rate": 0.001,
+  "max_train_windows": 20000,
+  "max_test_windows": 5000,
+  "mixed_precision": true,
+  "num_workers": 2,
+  "robustness_missing_rates": [0.0, 0.25, 0.5, 0.75, 1.0],
+  "warmup_batches": 10,
+  "latency_batches": 40
+}

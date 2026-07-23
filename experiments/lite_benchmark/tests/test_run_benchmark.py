@@ -23,7 +23,7 @@ def test_one_epoch_smoke_benchmark_writes_real_result_artifacts(tmp_path: Path, 
         class_names=np.asarray(["class_a", "class_b"]),
     )
     config = BenchmarkConfig(
-        models=("imu_cnn", "gated_fusion"),
+        models=("imu_cnn", "gated_fusion", "lite_actionmae"),
         epochs=1,
         seeds=(7,),
         batch_size=4,
@@ -46,6 +46,10 @@ def test_one_epoch_smoke_benchmark_writes_real_result_artifacts(tmp_path: Path, 
 
     assert summary_path.exists()
     assert (tmp_path / "results" / "confusion_gated_fusion.json").exists()
+    assert (tmp_path / "results" / "confusion_gated_fusion_seed7.json").exists()
+    assert (tmp_path / "results" / "history_gated_fusion_seed7.json").exists()
+    assert (tmp_path / "results" / "confusion_lite_actionmae_seed7.json").exists()
+    assert (tmp_path / "results" / "history_lite_actionmae_seed7.json").exists()
     history = json.loads(
         (tmp_path / "results" / "history_gated_fusion.json").read_text()
     )
