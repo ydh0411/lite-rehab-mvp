@@ -11,6 +11,7 @@ MODEL_NAMES = (
     "pose_cnn_bigru",
     "early_fusion",
     "gated_fusion",
+    "lite_actionmae",
 )
 
 

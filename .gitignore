@@ -14,6 +14,9 @@ sessions/
 models/
 python/.literehab_mobile_token
 python/.literehab_pairing.png
+experiments/lite_benchmark/.venv*/
+experiments/lite_benchmark/data/
+experiments/lite_benchmark/results/
 
 # IDE / editor
 .vscode/

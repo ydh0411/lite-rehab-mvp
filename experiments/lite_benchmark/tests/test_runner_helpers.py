@@ -3,7 +3,11 @@ from pathlib import Path
 
 import numpy as np
 
-from literehab_benchmark.runner import apply_missing_samples, write_summary
+from literehab_benchmark.runner import (
+    apply_missing_samples,
+    augment_actionmae_modalities,
+    write_summary,
+)
 
 
 def test_missing_sample_corruption_is_seeded_and_preserves_original():
@@ -38,3 +42,25 @@ def test_summary_writer_uses_stable_columns(tmp_path: Path):
         reader = csv.DictReader(handle)
         assert reader.fieldnames == list(rows[0])
         assert list(reader)[0]["model"] == "gated_fusion"
+
+
+def test_actionmae_augmentation_is_seeded_and_never_drops_both_modalities():
+    torch = __import__("torch")
+    imu = torch.ones((8, 6, 20))
+    pose = torch.ones((8, 9, 20))
+
+    torch.manual_seed(13)
+    first = augment_actionmae_modalities(imu, pose)
+    torch.manual_seed(13)
+    second = augment_actionmae_modalities(imu, pose)
+
+    for left, right in zip(first, second):
+        torch.testing.assert_close(left, right)
+    augmented_imu, augmented_pose, availability = first
+    assert augmented_imu.shape == imu.shape
+    assert augmented_pose.shape == pose.shape
+    assert availability.shape == (8, 2)
+    assert torch.all((availability >= 0) & (availability <= 1))
+    assert torch.all(availability.sum(dim=1) > 0)
+    assert torch.all(imu == 1)
+    assert torch.all(pose == 1)

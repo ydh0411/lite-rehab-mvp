@@ -37,3 +37,30 @@ def test_gated_fusion_ignores_pose_when_pose_is_unavailable():
     torch.testing.assert_close(logits_a, logits_b)
     torch.testing.assert_close(gates_a, gates_b)
     assert torch.all(gates_a[:, 1] == 0)
+
+
+def test_lite_actionmae_ignores_unavailable_pose_and_reconstructs_it():
+    torch.manual_seed(11)
+    model = build_model("lite_actionmae", num_classes=3, imu_channels=6, pose_channels=9)
+    model.eval()
+    imu = torch.randn(2, 6, 32)
+    pose_a = torch.randn(2, 9, 32)
+    pose_b = torch.randn(2, 9, 32) * 100
+    availability = torch.tensor([[1.0, 0.0], [0.5, 0.0]])
+
+    with torch.no_grad():
+        logits_a, gates_a = model(imu, pose_a, availability)
+        logits_b, gates_b = model(imu, pose_b, availability)
+
+    torch.testing.assert_close(logits_a, logits_b)
+    torch.testing.assert_close(gates_a, gates_b)
+    torch.testing.assert_close(gates_a.sum(dim=1), torch.ones(2))
+    assert torch.all(gates_a[:, 1] == 0)
+
+    with torch.no_grad():
+        _, _, reconstruction_loss = model.forward_with_reconstruction(
+            imu, pose_a, availability
+        )
+    assert reconstruction_loss.ndim == 0
+    assert torch.isfinite(reconstruction_loss)
+    assert reconstruction_loss >= 0

@@ -45,6 +45,37 @@ def apply_missing_samples(values, missing_rate: float, seed: int):
     return output, availability.astype(np.float32)
 
 
+def augment_actionmae_modalities(imu, pose):
+    """Create clean, partially corrupted, and single-modality-missing views."""
+    import torch
+
+    augmented_imu = imu.clone()
+    augmented_pose = pose.clone()
+    availability = torch.ones((len(imu), 2), device=imu.device, dtype=imu.dtype)
+    scenario = torch.rand(len(imu), device=imu.device)
+    modality = torch.randint(0, 2, (len(imu),), device=imu.device)
+    time_steps = imu.shape[-1]
+    for index in range(len(imu)):
+        selected = int(modality[index])
+        if scenario[index] < 0.5:
+            availability[index, selected] = 0.0
+        elif scenario[index] < 0.8:
+            missing_count = int(
+                torch.randint(
+                    max(1, time_steps // 4),
+                    max(2, 3 * time_steps // 4 + 1),
+                    (1,),
+                    device=imu.device,
+                )
+            )
+            missing = torch.randperm(time_steps, device=imu.device)[:missing_count]
+            (augmented_imu if selected == 0 else augmented_pose)[
+                index, :, missing
+            ] = 0.0
+            availability[index, selected] = 1.0 - missing_count / time_steps
+    return augmented_imu, augmented_pose, availability
+
+
 def write_summary(rows: list[dict[str, object]], path: str | Path) -> Path:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -225,11 +256,24 @@ def run_benchmark(
                     imu = imu.to(device, non_blocking=True)
                     pose = pose.to(device, non_blocking=True)
                     labels = labels.to(device, non_blocking=True)
-                    available = _availability(len(labels), device, model_name, training=True)
+                    if model_name == "lite_actionmae":
+                        imu, pose, available = augment_actionmae_modalities(imu, pose)
+                    else:
+                        available = _availability(
+                            len(labels), device, model_name, training=True
+                        )
                     optimizer.zero_grad(set_to_none=True)
                     with torch.amp.autocast(device_type=device.type, enabled=use_amp):
-                        logits, _ = model(imu, pose, available)
-                        loss = criterion(logits, labels)
+                        if model_name == "lite_actionmae":
+                            logits, _, reconstruction_loss = (
+                                model.forward_with_reconstruction(
+                                    imu, pose, available
+                                )
+                            )
+                            loss = criterion(logits, labels) + reconstruction_loss
+                        else:
+                            logits, _ = model(imu, pose, available)
+                            loss = criterion(logits, labels)
                     scaler.scale(loss).backward()
                     scaler.step(optimizer)
                     scaler.update()
@@ -269,61 +313,72 @@ def run_benchmark(
                 flush=True,
             )
 
-            if model_name == "gated_fusion":
-                (output_dir / "confusion_gated_fusion.json").write_text(json.dumps({
-                    "class_names": list(dataset.class_names),
-                    "matrix": confusion_matrix(
-                        truth, prediction, len(dataset.class_names)
-                    ).tolist(),
-                }, indent=2))
-                (output_dir / "history_gated_fusion.json").write_text(
-                    json.dumps(history, indent=2)
+            confusion_payload = {
+                "class_names": list(dataset.class_names),
+                "matrix": confusion_matrix(
+                    truth, prediction, len(dataset.class_names)
+                ).tolist(),
+            }
+            confusion_json = json.dumps(confusion_payload, indent=2)
+            history_json = json.dumps(history, indent=2)
+            for path, payload in (
+                (output_dir / f"confusion_{model_name}.json", confusion_json),
+                (
+                    output_dir / f"confusion_{model_name}_seed{seed}.json",
+                    confusion_json,
+                ),
+                (output_dir / f"history_{model_name}.json", history_json),
+                (
+                    output_dir / f"history_{model_name}_seed{seed}.json",
+                    history_json,
+                ),
+            ):
+                path.write_text(payload)
+            test_imu = normalized_imu[test_indices]
+            test_pose = normalized_pose[test_indices]
+            test_labels = dataset.labels[test_indices]
+            for rate in config.robustness_missing_rates:
+                corrupt_pose, pose_available = apply_missing_samples(
+                    test_pose, rate, seed + 101
                 )
-                test_imu = normalized_imu[test_indices]
-                test_pose = normalized_pose[test_indices]
-                test_labels = dataset.labels[test_indices]
-                for rate in config.robustness_missing_rates:
-                    corrupt_pose, pose_available = apply_missing_samples(
-                        test_pose, rate, seed + 101
-                    )
-                    pose_loader = _make_loader(
-                        test_imu, corrupt_pose, test_labels,
-                        config.batch_size, False, config.num_workers,
-                    )
-                    availability = np.column_stack((
-                        np.ones(len(test_labels), dtype=np.float32), pose_available
-                    )).astype(np.float32)
-                    robust_truth, robust_prediction = _predict(
-                        model, pose_loader, device, availability
-                    )
-                    metrics = classification_metrics(
-                        robust_truth, robust_prediction, len(dataset.class_names)
-                    )
-                    all_rows.append(_metric_row(
-                        model_name, f"pose_missing_{rate:.2f}", metrics,
-                        latency_ms, parameters, seed,
-                    ))
+                pose_loader = _make_loader(
+                    test_imu, corrupt_pose, test_labels,
+                    config.batch_size, False, config.num_workers,
+                )
+                availability = np.column_stack((
+                    np.ones(len(test_labels), dtype=np.float32), pose_available
+                )).astype(np.float32)
+                robust_truth, robust_prediction = _predict(
+                    model, pose_loader, device, availability
+                )
+                metrics = classification_metrics(
+                    robust_truth, robust_prediction, len(dataset.class_names)
+                )
+                all_rows.append(_metric_row(
+                    model_name, f"pose_missing_{rate:.2f}", metrics,
+                    latency_ms, parameters, seed,
+                ))
 
-                    corrupt_imu, imu_available = apply_missing_samples(
-                        test_imu, rate, seed + 202
-                    )
-                    imu_loader = _make_loader(
-                        corrupt_imu, test_pose, test_labels,
-                        config.batch_size, False, config.num_workers,
-                    )
-                    availability = np.column_stack((
-                        imu_available, np.ones(len(test_labels), dtype=np.float32)
-                    )).astype(np.float32)
-                    robust_truth, robust_prediction = _predict(
-                        model, imu_loader, device, availability
-                    )
-                    metrics = classification_metrics(
-                        robust_truth, robust_prediction, len(dataset.class_names)
-                    )
-                    all_rows.append(_metric_row(
-                        model_name, f"imu_missing_{rate:.2f}", metrics,
-                        latency_ms, parameters, seed,
-                    ))
+                corrupt_imu, imu_available = apply_missing_samples(
+                    test_imu, rate, seed + 202
+                )
+                imu_loader = _make_loader(
+                    corrupt_imu, test_pose, test_labels,
+                    config.batch_size, False, config.num_workers,
+                )
+                availability = np.column_stack((
+                    imu_available, np.ones(len(test_labels), dtype=np.float32)
+                )).astype(np.float32)
+                robust_truth, robust_prediction = _predict(
+                    model, imu_loader, device, availability
+                )
+                metrics = classification_metrics(
+                    robust_truth, robust_prediction, len(dataset.class_names)
+                )
+                all_rows.append(_metric_row(
+                    model_name, f"imu_missing_{rate:.2f}", metrics,
+                    latency_ms, parameters, seed,
+                ))
 
     manifest = {
         "dataset": str(Path(dataset_path).resolve()),
