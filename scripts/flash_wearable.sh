@@ -7,5 +7,6 @@ if [ "$#" -ne 1 ]; then
 fi
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-. /Users/yuedonghan/.espressif/v6.0.2/esp-idf/export.sh >/dev/null 2>&1
+. "$ROOT/scripts/common.sh"
+literehab_load_esp_idf
 idf.py -C "$ROOT/wearable" -p "$1" -b "${BAUD:-460800}" flash

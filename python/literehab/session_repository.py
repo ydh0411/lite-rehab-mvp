@@ -8,6 +8,7 @@ from pathlib import Path
 
 
 SAFE_SESSION_ID = re.compile(r"[A-Za-z0-9_.-]+")
+SESSION_TIMESTAMP = re.compile(r"^(?P<stamp>\d{8}-\d{6}-\d{6})(?:-|$)")
 SUPPORTED_ROM_STATES = {
     "elbow_flexion": "elbow_angle_deg",
     "shoulder_abduction": "shoulder_angle_deg",
@@ -84,6 +85,20 @@ def _truthy(value: str) -> bool:
         return value.strip().lower() in {"true", "yes", "connected"}
 
 
+def _session_started_at(path: Path) -> str:
+    match = SESSION_TIMESTAMP.match(path.stem)
+    if match is not None:
+        started = datetime.strptime(
+            match.group("stamp"),
+            "%Y%m%d-%H%M%S-%f",
+        ).replace(tzinfo=timezone.utc)
+        return started.isoformat()
+    return datetime.fromtimestamp(
+        path.stat().st_mtime,
+        tz=timezone.utc,
+    ).isoformat()
+
+
 class SessionRepository:
     def __init__(self, root: Path):
         self.root = Path(root)
@@ -158,9 +173,7 @@ class SessionRepository:
         serial_completeness = (
             round(100.0 * len(rows) / total_rows, 1) if total_rows else 0.0
         )
-        started_at = datetime.fromtimestamp(
-            path.stat().st_mtime, tz=timezone.utc
-        ).isoformat()
+        started_at = _session_started_at(path)
 
         return SessionReport(
             session_id=path.stem,
@@ -228,12 +241,17 @@ class SessionRepository:
     @staticmethod
     def _quality_counts(rows: list[dict[str, object]]) -> dict[str, int]:
         counts: dict[str, int] = {}
-        previous = "none"
+        previous_count: int | None = None
         for row in rows:
+            current_count = int(row["rep_count"])
             quality = str(row["quality"])
-            if quality != "none" and quality != previous:
+            if (
+                previous_count is not None
+                and current_count > previous_count
+                and quality != "none"
+            ):
                 counts[quality] = counts.get(quality, 0) + 1
-            previous = quality
+            previous_count = current_count
         return counts
 
     @staticmethod

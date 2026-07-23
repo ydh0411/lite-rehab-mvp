@@ -75,8 +75,8 @@ struct HardwareReadiness: Equatable, Sendable {
             ),
             Check(
                 id: "model",
-                title: "Form feedback",
-                detail: modelReady ? "ML feedback is ready." : "Training can continue with basic metrics.",
+                title: "Fusion model",
+                detail: modelReady ? "Fusion-model feedback is ready." : "Rule-based form feedback remains available.",
                 requirement: .optional,
                 state: modelReady ? .ready : .unavailable
             )
@@ -88,5 +88,6 @@ struct HardwareReadiness: Equatable, Sendable {
             return false
         }
         return ["connected", "ready", "streaming"].contains(normalized)
+            || normalized.hasPrefix("connected:")
     }
 }

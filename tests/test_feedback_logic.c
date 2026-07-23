@@ -41,9 +41,11 @@ int main(void)
                  FEEDBACK_EVENT_SUCCESS);
     expect_event(&logic, MOTION_STATE_IDLE, MOTION_QUALITY_OK, 1,
                  FEEDBACK_EVENT_NONE);
-
+    expect_event(&logic, MOTION_STATE_IDLE, MOTION_QUALITY_TOO_FAST, 2,
+                 FEEDBACK_EVENT_NONE);
     expect_event(&logic, MOTION_STATE_IDLE, MOTION_QUALITY_OK, 3,
                  FEEDBACK_EVENT_SUCCESS);
+
     expect_event(&logic, MOTION_STATE_IDLE, MOTION_QUALITY_OK, 2,
                  FEEDBACK_EVENT_NONE);
     expect_event(&logic, MOTION_STATE_IDLE, MOTION_QUALITY_OK, 3,

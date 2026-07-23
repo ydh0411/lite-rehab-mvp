@@ -50,6 +50,16 @@ final class LivePresentationModelsTests: XCTestCase {
         XCTAssertTrue(readiness.checks.allSatisfy { $0.state == .ready })
     }
 
+    func testReadinessRecognizesConnectedStatusWithSourceDetail() {
+        let readiness = HardwareReadiness.make(
+            snapshot: .fixture(cameraStatus: "connected: rtsp://192.168.1.8:8554/live"),
+            macConnected: true
+        )
+
+        let camera = try? XCTUnwrap(readiness.checks.first { $0.id == "camera" })
+        XCTAssertEqual(camera?.state, .ready)
+    }
+
     func testFeedbackNormalizationMapsBackendPhrasesToStableCategories() {
         XCTAssertEqual(FeedbackPresentation.make(raw: "Good form").category, .good)
         XCTAssertEqual(FeedbackPresentation.make(raw: "Please slow down").category, .slowDown)

@@ -410,7 +410,7 @@ Target: ESP32-S3-DevKitC-1 N16R8 (`esp32s3`). The component links shared packet,
 | `motion_logic.h` | Defines tunable thresholds, public motion results, and persistent state-machine/filter state |
 | `motion_logic.c` | Implements low-pass gyro filtering, complementary roll/pitch estimation, idle-only adaptive thresholds, axis/acceleration classification, reversal phases, range integration, speed/range quality, refractory time, and repetition counting |
 | `feedback_logic.h` | Defines `NONE`, `SUCCESS`, and `WARNING` receiver events plus transition state |
-| `feedback_logic.c` | Emits one success event only when `rep_count` increases; incomplete, failed, repeated, and stale motion packets remain silent |
+| `feedback_logic.c` | Emits one success event only for a good-quality counted repetition; fast, incomplete, repeated, and stale packets remain silent |
 | `ecg_logic.h/.c` | Preserves threshold 2500, 250 ms refractory, `60000/delta`, and BPM difference `>20`; adds the required below-threshold latch release and lead-off reset |
 
 #### BLE packet layout
@@ -435,7 +435,7 @@ The CRC starts at `0xFFFF` and uses polynomial `0x1021`. Changing the packed lay
 | `run_host_tests.sh` | Compiles portable code as C17 with `-Wall -Wextra -Werror`, links math where needed, and runs all four binaries |
 | `test_motion_packet.c` | Packet size, finalize/validate, corruption rejection, and magic rejection |
 | `test_motion_logic.c` | Idle behavior, both exercise cycles, good/fast/short-range results, counts, and idle-only threshold adaptation |
-| `test_feedback_logic.c` | Exactly one success/warning event per active-to-idle completion |
+| `test_feedback_logic.c` | Success only for good-quality counter increments; fast, repeated, regressed, and initial packets remain silent |
 | `test_ecg_logic.c` | Fixed threshold, latch release, strict 250 ms refractory, BPM calculation, `>20` alert, and lead-off reset |
 
 ## Build and verification
@@ -462,24 +462,25 @@ PYTHONPATH=python python python/run_dashboard.py --headless-smoke-test
 PYTHON=python ./scripts/test_all.sh
 ```
 
-The current suite collects **91 Python tests** and runs **4 C host-test executables**, Python syntax checks, the dashboard checkpoint smoke test, and both ESP-IDF builds. Hardware-dependent BLE, camera transport, CJMCU-8232/electrodes, OLED, LED, and buzzer behavior still require the physical acceptance steps in [DEMO_GUIDE.md](DEMO_GUIDE.md).
+The complete check runs the portable C and shell-script tests, Python application and benchmark tests, Python syntax and dashboard smoke checks, Web tests/build, Swift tests, available iOS simulator tests, and both ESP-IDF builds. Hardware-dependent BLE, camera transport, CJMCU-8232/electrodes, OLED, LED, and buzzer behavior still require the physical acceptance steps in [DEMO_GUIDE.md](DEMO_GUIDE.md).
 
 ### Helper scripts
 
 | Script | Purpose |
 |---|---|
-| `scripts/build_all.sh` | Load ESP-IDF 6.0.2 and build both firmware projects |
+| `scripts/demo_doctor.sh` | Check the active Python environment, runtime modules, models, Web build, serial device, and ESP-IDF before a demo |
+| `scripts/build_all.sh` | Discover the active ESP-IDF environment and build both firmware projects |
 | `scripts/flash_wearable.sh` | Flash `wearable/` to the single supplied serial port |
 | `scripts/flash_receiver.sh` | Flash `receiver/` to the single supplied native-USB port |
 | `scripts/start_maixcam2_demo.sh` | Start the right-arm dashboard with a source argument and fixed session path |
 | `scripts/probe_cameras.py` | List usable local OpenCV/UVC indices |
-| `scripts/test_all.sh` | Run C, Python, syntax, smoke, and firmware build checks |
+| `scripts/test_all.sh` | Run C, shell, Python, benchmark, Web, Swift/iOS, smoke, and firmware build checks |
 
 ## Native iPhone app (iOS 17+)
 
 The native SwiftUI app is in `ios/`. It reuses Stanford Spezi onboarding and task-flow composition in a portrait, English-only iPhone experience. The two primary tabs are **Live** and **History**; **Settings** opens from the gear button in the top-right corner. The Mac remains the hardware, inference, recording, and full-report host, while the iPhone provides guided setup, training, and review over an authenticated local-network connection.
 
-The Live flow is **Preflight → 3-2-1 baseline → Active Training → Completion**. Mac and serial motion-sensor connections are required. Wireless camera, ECG, and ML feedback are optional: if any are unavailable, the user must explicitly choose **Start Anyway**. During training, camera requests use adaptive retry and the session stays active through temporary camera loss or Mac reconnection.
+The Live flow is **Preflight → 3-2-1 baseline → Active Training → Completion**. Mac and serial motion-sensor connections are required. Wireless camera, ECG, and the optional fusion model are optional: if any are unavailable, the user must explicitly choose **Start Anyway**. Rule-based form feedback remains available without the fusion checkpoint. During training, camera requests use adaptive retry and the session stays active through temporary camera loss or Mac reconnection.
 
 ### Build and install
 
@@ -490,19 +491,16 @@ The Live flow is **Preflight → 3-2-1 baseline → Active Training → Completi
 5. Open `ios/LiteRehab.xcodeproj`, select the **LiteRehab** target, choose your Personal Team under **Signing & Capabilities**, and use a unique bundle identifier if Xcode requests one.
 6. Connect an iPhone, enable Developer Mode when prompted, select it as the run destination, and press Run. Repeat on each team iPhone.
 
-For the final wireless-hardware demo on the current hotspot addresses, start the Mac service with:
+For the final wireless-hardware demo, run these commands from a fresh clone after activating a Python 3.10-3.12 environment:
 
 ```bash
-LITEREHAB_DIR="/Users/yuedonghan/Desktop/BMEG3920_project/lite_rehab_mvp/.worktrees/codex-ios-native-app"
-MAC_IP="172.20.10.14"
-CAMERA_RTSP="rtsp://172.20.10.5:8554/live"
-
-cd "$LITEREHAB_DIR" || exit 1
-conda activate literehab
+cd /path/to/lite_rehab_mvp
 python -m pip install -r python/requirements.txt
+export MAC_IP="<this Mac's LAN IP>"
+export CAMERA_RTSP="rtsp://<MaixCAM LAN IP>:8554/live"
+./scripts/demo_doctor.sh
 
-PYTHONPATH="$LITEREHAB_DIR/python" \
-python "$LITEREHAB_DIR/python/run_web_dashboard.py" \
+PYTHONPATH=python python python/run_web_dashboard.py \
   --host 0.0.0.0 \
   --web-port 8000 \
   --mobile \
@@ -511,8 +509,8 @@ python "$LITEREHAB_DIR/python/run_web_dashboard.py" \
   --port auto \
   --camera-source "$CAMERA_RTSP" \
   --side right \
-  --sessions-dir "$LITEREHAB_DIR/python/sessions" \
-  --model "$LITEREHAB_DIR/python/models/imu_cnnbigru.pt"
+  --sessions-dir python/sessions \
+  --model python/models/imu_cnnbigru.pt
 ```
 
 Update both IP addresses if the hotspot assigns new ones. The MaixCAM console may print `rtsp://0.0.0.0:8554/live`; on the Mac, use the camera's reachable LAN IP instead. Keep the Mac, MaixCAM, and iPhone on the same trusted network, scan the terminal QR code, and leave this command running so the Mac dashboard and phone remain synchronized. A free Apple Personal Team profile normally expires after seven days; rebuild from Xcode to reinstall. App Store submission is not required for this team demo.

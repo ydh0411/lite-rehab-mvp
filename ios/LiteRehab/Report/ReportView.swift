@@ -87,7 +87,7 @@ struct ReportView: View {
 
     private func quality(_ report: SessionReport) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Movement quality").font(.headline)
+            Text("Counted repetition quality").font(.headline)
             ForEach(report.qualityCounts.keys.sorted(), id: \.self) { key in
                 HStack {
                     Text(key.replacingOccurrences(of: "_", with: " ").capitalized)
@@ -101,9 +101,9 @@ struct ReportView: View {
 
     private func completeness(_ report: SessionReport) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Data completeness").font(.headline)
+            Text("Data availability").font(.headline)
             HStack {
-                StatusBadge(title: "IMU \(ReportFormatting.percent(report.serialCompletenessPercent))", systemImage: "gyroscope", color: .indigo)
+                StatusBadge(title: "Parsed IMU rows \(ReportFormatting.percent(report.serialCompletenessPercent))", systemImage: "gyroscope", color: .indigo)
                 StatusBadge(title: "Pose \(ReportFormatting.percent(report.poseCompletenessPercent))", systemImage: "figure.walk", color: .cyan)
             }
             StatusBadge(title: "ECG \(ReportFormatting.ecgCompleteness(report.ecgCompletenessPercent))", systemImage: "heart", color: .red)
