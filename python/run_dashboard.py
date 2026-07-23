@@ -99,6 +99,21 @@ def ecg_output_path(session_path: Path) -> Path:
     return session_path.with_name(f"{session_path.stem}_ecg{suffix}")
 
 
+def open_serial_device(port: str, timeout: float = 1) -> serial.Serial:
+    # macOS otherwise toggles DTR/RTS while opening native ESP32-S3 USB-JTAG,
+    # which resets the receiver into the ROM download mode.
+    device = serial.Serial(
+        port=None,
+        baudrate=115200,
+        timeout=timeout,
+        dsrdtr=True,
+        rtscts=True,
+    )
+    device.port = port
+    device.open()
+    return device
+
+
 def choose_port(requested: str) -> str | None:
     if requested != "auto":
         return requested
@@ -124,7 +139,7 @@ class SerialReader(threading.Thread):
     def run(self) -> None:
         while not self.stop_event.is_set():
             try:
-                with serial.Serial(self.port, 115200, timeout=1) as device:
+                with open_serial_device(self.port) as device:
                     self.status = "connected"
                     while not self.stop_event.is_set():
                         line = device.readline().decode("utf-8", "ignore")

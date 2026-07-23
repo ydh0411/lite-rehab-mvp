@@ -83,6 +83,33 @@ def test_auto_port_prefers_receiver_usbmodem_over_wearable_usbserial(monkeypatch
     assert choose_port("auto") == "/dev/cu.usbmodem1101"
 
 
+def test_serial_device_opens_without_toggling_native_usb_reset_lines(monkeypatch):
+    observed = {}
+
+    class FakeSerial:
+        def __init__(self, **kwargs):
+            observed["kwargs"] = kwargs
+            self.port = None
+            self.opened = False
+
+        def open(self):
+            self.opened = True
+
+    monkeypatch.setattr(run_dashboard.serial, "Serial", FakeSerial)
+
+    device = run_dashboard.open_serial_device("/dev/cu.usbmodem1201")
+
+    assert observed["kwargs"] == {
+        "port": None,
+        "baudrate": 115200,
+        "timeout": 1,
+        "dsrdtr": True,
+        "rtscts": True,
+    }
+    assert device.port == "/dev/cu.usbmodem1201"
+    assert device.opened
+
+
 def test_dashboard_uses_shipped_imu_model_by_default():
     args = build_parser().parse_args([])
 
