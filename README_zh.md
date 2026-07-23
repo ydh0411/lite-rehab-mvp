@@ -10,6 +10,10 @@
   <p><a href="README.md">English</a> · <a href="README_zh.md">中文</a></p>
 </div>
 
+最终答辩请直接按照
+[`FINAL_DEMO_RUNBOOK_ZH.md`](FINAL_DEMO_RUNBOOK_ZH.md)
+执行。该手册分别给出电脑端、手机端和双端同步的启动方式。
+
 LiteRehab Fusion 是一个面向 BMEG3920 课程与工程演示的上肢康复原型。MYOSA ESP32 佩戴端对前臂运动进行规则分类，并通过 BLE 发送 50 Hz 的 MPU6050 数据；ESP32-S3 接收端负责校验、声光反馈与 USB 串口转发。独立 MaixCAM2 向电脑端 Python Dashboard 提供视频，MediaPipe 姿态特征、可选神经网络推理、反馈融合、界面显示和同步 CSV 记录均在电脑上运行。
 
 **LiteRehab Fusion 不是医疗器械，不用于诊断、治疗处方、康复评分，也不能替代专业人员监督。**

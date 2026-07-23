@@ -1,5 +1,9 @@
 # LiteRehab-Fusion MVP 演示指导文档
 
+> 最终答辩请优先使用
+> [`FINAL_DEMO_RUNBOOK_ZH.md`](FINAL_DEMO_RUNBOOK_ZH.md)。该手册分别给出电脑端、
+> 手机端和双端同步的启动方式，并包含逐块烧录、配对、动作和结束保存。
+
 ## 系统架构
 
 ```text

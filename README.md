@@ -10,6 +10,10 @@
   <p><a href="README.md">English</a> · <a href="README_zh.md">中文</a></p>
 </div>
 
+For the final presentation, follow
+[`FINAL_DEMO_RUNBOOK_ZH.md`](FINAL_DEMO_RUNBOOK_ZH.md). Its standard path keeps
+the Mac Web and iPhone startup paths separate, with an explicit shared-session mode.
+
 LiteRehab Fusion is a BMEG3920 coursework and engineering prototype for upper-limb rehabilitation demonstrations. A MYOSA ESP32 wearable classifies forearm motion and sends 50 Hz MPU6050 samples over BLE to an ESP32-S3 receiver. A MaixCAM2 independently supplies video to a desktop Python dashboard, where MediaPipe pose features, optional neural-network inference, feedback fusion, visualization, and synchronized CSV logging run.
 
 **LiteRehab Fusion is not a medical device. It does not diagnose, prescribe treatment, score recovery, or replace professional supervision.**
