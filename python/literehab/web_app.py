@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import time
 from dataclasses import asdict
 from pathlib import Path
 from typing import Iterator
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
+from .mobile_access import MobileAccessConfig, authorization_matches
 from .session_repository import SessionRepository
 from .web_runtime import RuntimeProtocol
 
@@ -29,6 +31,15 @@ class StartSessionRequest(BaseModel):
 
 def _runtime_conflict(error: RuntimeError) -> HTTPException:
     return HTTPException(status_code=409, detail=str(error))
+
+
+def _is_loopback(host: str | None) -> bool:
+    if host is None or host == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
 
 
 def camera_frames(
@@ -51,13 +62,38 @@ def create_app(
     runtime: RuntimeProtocol,
     sessions_dir: Path,
     frontend_dir: Path | None = None,
+    mobile_access: MobileAccessConfig | None = None,
 ) -> FastAPI:
     app = FastAPI(title="LiteRehab Local Dashboard", version="1.0")
     repository = SessionRepository(sessions_dir)
 
+    @app.middleware("http")
+    async def mobile_authentication(request: Request, call_next):
+        protected = request.url.path == "/api" or request.url.path.startswith("/api/")
+        remote = not _is_loopback(request.client.host if request.client else None)
+        if mobile_access is not None and protected and remote:
+            if not authorization_matches(
+                mobile_access,
+                request.headers.get("Authorization"),
+            ):
+                return JSONResponse(
+                    status_code=401,
+                    content={"detail": "Pairing required"},
+                )
+        return await call_next(request)
+
     @app.get("/api/status")
     def status() -> dict[str, object]:
         return runtime.snapshot().to_dict()
+
+    @app.get("/api/mobile/health")
+    def mobile_health() -> dict[str, object]:
+        return {
+            "service": (
+                mobile_access.service_name if mobile_access else "LiteRehab Mac"
+            ),
+            "api_version": mobile_access.api_version if mobile_access else 1,
+        }
 
     @app.get("/api/sessions")
     def sessions() -> list[dict[str, object]]:
@@ -101,6 +137,14 @@ def create_app(
 
     @app.websocket("/api/live")
     async def live(socket: WebSocket) -> None:
+        remote = not _is_loopback(socket.client.host if socket.client else None)
+        if mobile_access is not None and remote and not authorization_matches(
+            mobile_access,
+            socket.headers.get("Authorization"),
+        ):
+            await socket.accept()
+            await socket.close(code=4401, reason="Pairing required")
+            return
         await socket.accept()
         try:
             while True:
@@ -117,6 +161,17 @@ def create_app(
         return StreamingResponse(
             camera_frames(runtime, frame),
             media_type="multipart/x-mixed-replace; boundary=frame",
+        )
+
+    @app.get("/api/camera.jpg")
+    def camera_snapshot() -> Response:
+        frame = runtime.jpeg_frame()
+        if frame is None:
+            raise HTTPException(status_code=503, detail="Camera frame unavailable")
+        return Response(
+            content=frame,
+            media_type="image/jpeg",
+            headers={"Cache-Control": "no-store"},
         )
 
     if frontend_dir is not None:

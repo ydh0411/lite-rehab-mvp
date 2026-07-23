@@ -1,5 +1,8 @@
+import pytest
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
+from literehab.mobile_access import MobileAccessConfig
 from literehab.web_app import camera_frames, create_app
 from literehab.web_runtime import FixtureRuntime
 
@@ -71,6 +74,90 @@ def test_camera_stream_is_rate_limited(monkeypatch):
     assert b"second-frame" in next(stream)
 
     assert waits == [0.05]
+
+
+def test_remote_mobile_api_requires_pairing_token(tmp_path):
+    app = create_app(
+        FixtureRuntime(),
+        tmp_path,
+        mobile_access=MobileAccessConfig("secret-token"),
+    )
+    client = TestClient(app, client=("192.168.1.40", 50000))
+
+    assert client.get("/api/mobile/health").status_code == 401
+    response = client.get(
+        "/api/mobile/health",
+        headers={"Authorization": "Bearer secret-token"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "service": "LiteRehab Mac",
+        "api_version": 1,
+    }
+
+
+def test_loopback_desktop_api_remains_unauthed(tmp_path):
+    app = create_app(
+        FixtureRuntime(),
+        tmp_path,
+        mobile_access=MobileAccessConfig("secret-token"),
+    )
+    client = TestClient(app, client=("127.0.0.1", 50000))
+
+    assert client.get("/api/sessions").status_code == 200
+
+
+def test_camera_snapshot_returns_latest_jpeg(monkeypatch, tmp_path):
+    runtime = FixtureRuntime()
+    monkeypatch.setattr(runtime, "jpeg_frame", lambda: b"jpeg-frame")
+    client = TestClient(create_app(runtime, tmp_path))
+
+    response = client.get("/api/camera.jpg")
+
+    assert response.status_code == 200
+    assert response.content == b"jpeg-frame"
+    assert response.headers["content-type"] == "image/jpeg"
+    assert response.headers["cache-control"] == "no-store"
+
+
+def test_camera_snapshot_reports_unavailable(tmp_path):
+    client = TestClient(create_app(FixtureRuntime(), tmp_path))
+
+    response = client.get("/api/camera.jpg")
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Camera frame unavailable"
+
+
+def test_remote_websocket_accepts_pairing_token(tmp_path):
+    app = create_app(
+        FixtureRuntime(),
+        tmp_path,
+        mobile_access=MobileAccessConfig("secret-token"),
+    )
+    client = TestClient(app, client=("192.168.1.40", 50000))
+
+    with client.websocket_connect(
+        "/api/live",
+        headers={"Authorization": "Bearer secret-token"},
+    ) as socket:
+        assert socket.receive_json()["exercise"] == "idle"
+
+
+def test_remote_websocket_rejects_missing_pairing_token(tmp_path):
+    app = create_app(
+        FixtureRuntime(),
+        tmp_path,
+        mobile_access=MobileAccessConfig("secret-token"),
+    )
+    client = TestClient(app, client=("192.168.1.40", 50000))
+
+    with pytest.raises(WebSocketDisconnect) as caught:
+        with client.websocket_connect("/api/live") as socket:
+            socket.receive_json()
+
+    assert caught.value.code == 4401
 
 
 def test_unknown_report_returns_not_found(tmp_path):
