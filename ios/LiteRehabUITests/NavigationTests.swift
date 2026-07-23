@@ -22,7 +22,7 @@ final class NavigationTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Participant 01"].waitForExistence(timeout: 3))
         app.staticTexts["Participant 01"].tap()
         XCTAssertTrue(app.navigationBars["Session Report"].waitForExistence(timeout: 3))
-        XCTAssertTrue(app.staticTexts["Movement quality"].exists)
+        XCTAssertTrue(app.staticTexts["Counted repetition quality"].exists)
     }
 
     func testSettingsKeepsPrototypeDisclaimerAndAcknowledgements() {

@@ -83,7 +83,7 @@ export function ReportPage({ report, loading, error }: ReportPageProps) {
         <TrendChart title="Connected BPM" description="Positive BPM values with leads connected" data={report.bpm_series} unit="" color="#b64747" />
 
         <article className="quality-distribution">
-          <header><strong>Movement quality events</strong><span>{qualityTotal} recognized events</span></header>
+          <header><strong>Counted repetition quality</strong><span>{qualityTotal} observed repetitions</span></header>
           <div className="quality-bars">
             {Object.entries(report.quality_counts).length ? Object.entries(report.quality_counts).map(([quality, count]) => (
               <div key={quality}>
@@ -99,7 +99,7 @@ export function ReportPage({ report, loading, error }: ReportPageProps) {
       <aside className="data-quality-note">
         <header><AlertTriangle size={17} /><strong>Data quality and interpretation</strong></header>
         <div className="completeness-row">
-          <span>Serial {report.serial_completeness_percent.toFixed(0)}%</span>
+          <span>Parsed IMU rows {report.serial_completeness_percent.toFixed(0)}%</span>
           <span>Valid pose {report.pose_completeness_percent.toFixed(0)}%</span>
           <span>ECG connected {report.ecg_completeness_percent === null ? "Not recorded" : `${report.ecg_completeness_percent.toFixed(0)}%`}</span>
         </div>

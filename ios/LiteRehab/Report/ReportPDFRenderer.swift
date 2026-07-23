@@ -32,8 +32,8 @@ struct ReportPDFRenderer {
             draw(metric, font: .systemFont(ofSize: 13), y: &y, page: page)
         }
         y += 8
-        draw("Data completeness", font: .boldSystemFont(ofSize: 15), y: &y, page: page)
-        draw("IMU \(ReportFormatting.percent(report.serialCompletenessPercent)) · Pose \(ReportFormatting.percent(report.poseCompletenessPercent)) · ECG \(ReportFormatting.ecgCompleteness(report.ecgCompletenessPercent))", font: .systemFont(ofSize: 12), y: &y, page: page)
+        draw("Data availability", font: .boldSystemFont(ofSize: 15), y: &y, page: page)
+        draw("Parsed IMU rows \(ReportFormatting.percent(report.serialCompletenessPercent)) · Valid pose \(ReportFormatting.percent(report.poseCompletenessPercent)) · ECG connected \(ReportFormatting.ecgCompleteness(report.ecgCompletenessPercent))", font: .systemFont(ofSize: 12), y: &y, page: page)
 
         if !report.warnings.isEmpty {
             y += 8

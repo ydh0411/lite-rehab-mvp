@@ -23,5 +23,7 @@ feedback_event_t feedback_logic_update(feedback_logic_t *logic,
     }
 
     logic->previous_rep_count = packet->rep_count;
-    return FEEDBACK_EVENT_SUCCESS;
+    return packet->quality == MOTION_QUALITY_OK
+        ? FEEDBACK_EVENT_SUCCESS
+        : FEEDBACK_EVENT_NONE;
 }

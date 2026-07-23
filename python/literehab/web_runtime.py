@@ -7,7 +7,7 @@ import threading
 import time
 from collections import deque
 from dataclasses import dataclass, replace
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
@@ -98,7 +98,7 @@ class LiteRehabRuntime:
             self._session_counter += 1
             safe_subject = re.sub(r"[^A-Za-z0-9_-]+", "-", normalized).strip("-")
             safe_subject = safe_subject or "participant"
-            stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+            stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
             session_id = f"{stamp}-{self._session_counter:02d}-{safe_subject}"
             session_path = self.config.sessions_dir / f"{session_id}.csv"
             ecg_path = self.config.sessions_dir / f"{session_id}_ecg.csv"

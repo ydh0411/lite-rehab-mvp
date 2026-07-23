@@ -428,16 +428,13 @@ open LiteRehab.xcodeproj
 ### 10.2 启动与配对
 
 ```bash
-LITEREHAB_DIR="/Users/yuedonghan/Desktop/BMEG3920_project/lite_rehab_mvp/.worktrees/codex-ios-native-app"
-MAC_IP="172.20.10.14"
-CAMERA_RTSP="rtsp://172.20.10.5:8554/live"
-
-cd "$LITEREHAB_DIR" || exit 1
-conda activate literehab
+cd /path/to/lite_rehab_mvp
 python -m pip install -r python/requirements.txt
+export MAC_IP="<本机局域网 IP>"
+export CAMERA_RTSP="rtsp://<MaixCAM 局域网 IP>:8554/live"
+./scripts/demo_doctor.sh
 
-PYTHONPATH="$LITEREHAB_DIR/python" \
-python "$LITEREHAB_DIR/python/run_web_dashboard.py" \
+PYTHONPATH=python python python/run_web_dashboard.py \
   --host 0.0.0.0 \
   --web-port 8000 \
   --mobile \
@@ -446,15 +443,15 @@ python "$LITEREHAB_DIR/python/run_web_dashboard.py" \
   --port auto \
   --camera-source "$CAMERA_RTSP" \
   --side right \
-  --sessions-dir "$LITEREHAB_DIR/python/sessions" \
-  --model "$LITEREHAB_DIR/python/models/imu_cnnbigru.pt"
+  --sessions-dir python/sessions \
+  --model python/models/imu_cnnbigru.pt
 ```
 
 如果热点重新分配地址，先在 Mac 用 `ipconfig getifaddr en0`（或实际联网接口）确认 `MAC_IP`，并把 `CAMERA_RTSP` 改为 MaixCAM 的真实局域网地址。相机终端输出中的 `0.0.0.0` 只是监听地址，不能作为 Mac 的视频源。
 
 终端出现二维码后，在 iPhone 打开 LiteRehab，点击 **Pair with Mac**。成功后依次检查：
 
-1. **Preflight**：输入 Participant ID，确认 Mac 与 Motion sensor 为 Required/Ready；Camera、ECG、Form feedback 缺失时检查 **Start Anyway** 确认；
+1. **Preflight**：输入 Participant ID，确认 Mac 与 Motion sensor 为 Required/Ready；Camera、ECG、Fusion model 缺失时检查 **Start Anyway** 确认；没有融合模型时规则式动作反馈仍然可用；
 2. **Countdown**：点击 **Start Session** 后确认 3-2-1、baseline capture，再进入 Active；
 3. **Active Training**：电脑与手机同步显示次数、feedback、ROM、BPM 和无线相机；断开相机时手机显示稳定恢复状态但 Session 不结束；
 4. **Completion**：点击 **Finish Session** 并二次确认，检查本地 summary、**View in History** 与 **Done**；完整报告仍由 Mac 生成；

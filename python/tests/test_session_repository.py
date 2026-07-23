@@ -1,4 +1,6 @@
 import csv
+import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -63,6 +65,26 @@ def test_report_derives_events_without_counting_repeated_rows(tmp_path):
     assert report.pose_completeness_percent == 100.0
 
 
+def test_report_counts_consecutive_repetitions_with_the_same_quality(tmp_path):
+    write_csv(
+        tmp_path / "demo.csv",
+        SESSION_FIELDS,
+        [
+            session_row(1.0, "idle", 0, "none"),
+            session_row(2.0, "elbow_flexion", 1, "ok"),
+            session_row(3.0, "elbow_flexion", 1, "ok"),
+            session_row(4.0, "elbow_flexion", 2, "ok"),
+            session_row(5.0, "elbow_flexion", 2, "ok"),
+        ],
+    )
+
+    report = SessionRepository(tmp_path).get_report("demo")
+
+    assert report.repetitions == 2
+    assert report.quality_counts == {"ok": 2}
+    assert report.good_form_percent == 100.0
+
+
 def test_report_uses_only_connected_positive_bpm_samples(tmp_path):
     write_csv(
         tmp_path / "demo.csv",
@@ -103,6 +125,21 @@ def test_counter_reset_starts_a_new_segment(tmp_path):
 
     assert report.repetitions == 2
     assert [point.value for point in report.repetition_series] == [1.0, 2.0]
+
+
+def test_report_uses_session_id_timestamp_instead_of_file_mtime(tmp_path):
+    path = tmp_path / "20260720-100102-123456-01-Demo-01.csv"
+    write_csv(
+        path,
+        SESSION_FIELDS,
+        [session_row(1.0, "idle", 0, "none")],
+    )
+    unrelated_mtime = datetime(2030, 1, 1, tzinfo=timezone.utc).timestamp()
+    os.utime(path, (unrelated_mtime, unrelated_mtime))
+
+    report = SessionRepository(tmp_path).get_report(path.stem)
+
+    assert report.started_at == "2026-07-20T10:01:02.123456+00:00"
 
 
 def test_list_ignores_ecg_companion_and_marks_incomplete_data(tmp_path):
