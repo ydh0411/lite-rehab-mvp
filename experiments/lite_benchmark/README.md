@@ -4,18 +4,22 @@ This folder is deliberately independent from the production dashboard and the
 original training scripts.  It provides a small course-project benchmark, not a
 full reproduction of every model in the cited papers.
 
-The benchmark compares five compact action-recognition configurations:
+The benchmark compares six compact action-recognition configurations:
 
 1. `imu_cnn`: fast IMU-only baseline.
 2. `imu_cnn_bigru`: the current LiteRehab-style IMU temporal model.
 3. `pose_cnn_bigru`: RGB-pose-only temporal baseline.
 4. `early_fusion`: direct RGB-pose/IMU feature concatenation.
 5. `gated_fusion`: reliability-gated late fusion with modality dropout.
+6. `lite_actionmae`: the final robustness-oriented model, using modality
+   masking, memory/dummy tokens, Transformer fusion, and clean-target
+   reconstruction.
 
-Every model is kept below two million trainable parameters.  The default RTX
-5060 Laptop preset runs one seed, at most 5,000 training windows, and eight
-epochs.  No video decoding, ViTPose training, PoseC3D training, or six-IMU raw
-signal reconstruction is performed.
+Every model is kept below two million trainable parameters. The final RTX 5060
+configuration evaluates all six models with seeds 7/17/27, at most 20,000
+training windows, at most 5,000 fixed evaluation windows, and eight epochs.
+No video decoding, ViTPose training, PoseC3D training, or six-IMU raw signal
+reconstruction is performed.
 
 ## Data boundary
 
@@ -29,6 +33,23 @@ The mRI archive stores synchronized pose estimated from RGB and from the full
 IMU setup.  Therefore this benchmark demonstrates the value of modalities and
 fusion, but it is **not** evidence that one wrist IMU alone matches the original
 six-IMU setup.  The final LiteRehab product still uses one wrist IMU.
+
+## Final-model decision and deployment boundary
+
+Lite-ActionMAE is the final experimental model for the report and benchmark
+figures. Gated Fusion remains a baseline. The decision considers clean
+Macro-F1, missing-modality robustness, worst-condition Macro-F1, cross-seed
+stability, latency, and parameter count rather than clean accuracy alone.
+
+The generated `results/` directories are intentionally excluded from Git.
+Consequently, this repository contains the final experiment design and plotting
+code but not the user's completed numerical `summary.csv`. Copy the completed
+result directory onto the machine before regenerating final figures.
+
+The mRI benchmark checkpoint is not a drop-in replacement for the live
+single-wrist MPU6050 checkpoint. The current hardware demo continues to use the
+verified IMU CNN-BiGRU/rule fallback until Lite-ActionMAE is retrained with
+device-aligned synchronized wrist IMU and pose windows.
 
 ## Setup
 
@@ -105,6 +126,16 @@ PYTHONPATH=. python benchmark.py run \
   --output results/repeat3
 ```
 
+For the final six-model experiment:
+
+```bash
+PYTHONPATH=. python benchmark.py run \
+  --dataset data/mri_all12.npz \
+  --config configs/rtx5060_full12_repeat3.json \
+  --holdout-subjects subject17 subject18 subject19 subject20 \
+  --output results/all12_full_repeat3_actionmae
+```
+
 ## 3. Generate PPT-ready scientific figures
 
 The plotting code follows the path-based
@@ -115,16 +146,17 @@ and vector export.
 
 ```bash
 PYTHONPATH=. python benchmark.py figures \
-  --results results/quick \
-  --output results/quick/figures
+  --results results/all12_full_repeat3_actionmae \
+  --output results/all12_full_repeat3_actionmae/figures
 ```
 
-Five figures are exported as both PDF and 300-DPI PNG:
+This command only redraws the figures; it does not retrain any model. Five
+multi-panel figures are exported as both PDF and 300-DPI PNG:
 
-- `fig_model_performance`: Accuracy and Macro-F1 grouped bars.
-- `fig_efficiency_tradeoff`: Macro-F1 versus inference latency; bubble size is parameter count.
-- `fig_robustness`: missing-pose and missing-IMU degradation.
-- `fig_confusion_matrix`: row-normalized confusion matrix with sample counts.
+- `fig_model_performance`: clean metrics and multi-objective model selection.
+- `fig_efficiency_tradeoff`: accuracy, robustness, latency, and parameter evidence.
+- `fig_robustness`: missing-pose and missing-IMU degradation over three seeds.
+- `fig_confusion_matrix`: final Lite-ActionMAE confusion patterns.
 - `fig_training_curves`: loss and held-out Macro-F1 over the eight epochs.
 
 Use PNG files in PowerPoint and keep the PDF files for reports or later editing.
@@ -133,7 +165,8 @@ Use PNG files in PowerPoint and keep the PDF files for reports or later editing.
 
 - Treat this as an engineering benchmark, not a clinical validation.
 - Report Macro-F1 and the confusion matrix, not accuracy alone.
-- Do not claim that gated fusion is better unless the generated result actually shows it.
+- Present Lite-ActionMAE as the final experimental model and Gated Fusion as a
+  baseline; report the raw trade-offs so the selection remains auditable.
 - Keep the generated `manifest.json` with the figures; it records the split,
   device, labels, and exact lightweight budget.
 - The KIMORE quality-scoring experiment remains a separate optional extension;

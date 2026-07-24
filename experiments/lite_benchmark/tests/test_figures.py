@@ -4,7 +4,16 @@ from pathlib import Path
 
 import matplotlib.image as mpimg
 
-from literehab_benchmark.figures import expected_figure_stems, generate_figures
+from literehab_benchmark.figures import (
+    MODEL_LABELS,
+    expected_figure_stems,
+    generate_figures,
+)
+
+
+def test_lite_actionmae_is_labeled_as_the_final_model():
+    assert MODEL_LABELS["lite_actionmae"] == "Lite-ActionMAE (Final)"
+    assert MODEL_LABELS["gated_fusion"] == "Gated Fusion"
 
 
 def test_figure_suite_exports_ppt_png_and_vector_pdf(tmp_path: Path):

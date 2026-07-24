@@ -18,8 +18,23 @@ LiteRehab Fusion is a BMEG3920 coursework and engineering prototype for upper-li
 
 **LiteRehab Fusion is not a medical device. It does not diagnose, prescribe treatment, score recovery, or replace professional supervision.**
 
+## Final experimental model
+
+The final multimodal benchmark model is **Lite-ActionMAE**, a lightweight
+sensor-oriented adaptation of ActionMAE. It is compared with five compact
+baselines under clean, missing-pose, and missing-IMU conditions over three
+seeds. Model selection reports robustness, stability, latency, and parameter
+count alongside clean performance. See
+[`experiments/lite_benchmark/README.md`](experiments/lite_benchmark/README.md).
+
+This experimental choice does not silently replace the live checkpoint: the
+mRI benchmark inputs are not equivalent to the deployed single-wrist MPU6050
+stream. The hardware demo retains its verified IMU CNN-BiGRU/rule fallback until
+Lite-ActionMAE is retrained on device-aligned synchronized data.
+
 ## Contents
 
+- [Final experimental model](#final-experimental-model)
 - [System at a glance](#system-at-a-glance)
 - [Architecture and data flow](#architecture-and-data-flow)
 - [Runnable projects](#runnable-projects)
@@ -45,7 +60,7 @@ LiteRehab Fusion is a BMEG3920 coursework and engineering prototype for upper-li
 | Independent camera | MaixCAM2 RTSP over USB NCM by default; UVC optional | Implemented |
 | Desktop vision | MediaPipe pose landmarks and derived joint/trunk features | Implemented |
 | IMU model | Automatically loaded CNN-BiGRU checkpoint | Implemented |
-| Multimodal model | Dual-branch CNN-BiGRU code and training pipeline | Optional; no default fusion checkpoint |
+| Multimodal benchmark | Lite-ActionMAE final experimental model plus five compact baselines | Implemented offline; device-aligned live checkpoint pending |
 | Dashboard and logging | 1280×720 interface, ECG waveform, synchronized IMU/pose CSV, and companion ECG CSV | Implemented |
 
 The firmware directly recognizes `forearm_rotation` and `elbow_flexion`. The shipped IMU checkpoint also contains `shoulder_abduction`, but that class is not a third firmware repetition state. The current model and dataset are classroom baselines, not clinical validation evidence.
@@ -60,7 +75,7 @@ flowchart LR
     RECV -->|"IMU + ECG serial records"| DASH["Python dashboard"]
     CAM["MaixCAM2"] -->|"RTSP over USB NCM<br/>or optional UVC"| DASH
     DASH --> POSE["MediaPipe pose<br/>angles + ROM + trunk motion"]
-    DASH --> MODEL["IMU CNN-BiGRU<br/>optional multimodal model"]
+    DASH --> MODEL["IMU CNN-BiGRU fallback<br/>Lite-ActionMAE final benchmark"]
     POSE --> FUSE["Rule/model decision<br/>live feedback"]
     MODEL --> FUSE
     DASH --> LOG["IMU/pose session CSV<br/>+ raw ECG companion CSV"]

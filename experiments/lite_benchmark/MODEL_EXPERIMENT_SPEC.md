@@ -19,7 +19,6 @@ engineering benchmark, not a clinical claim or an exact paper reproduction.
 5. The current mRI "IMU" features are full-body pose estimates rather than the
    deployed wrist MPU6050's raw six-axis stream, so benchmark weights are not
    directly deployable without aligned device-data retraining.
-
 The model-selection score is fixed before the new run:
 
 - 25% clean Macro-F1;
@@ -35,6 +34,11 @@ models that are all comfortably real-time from outweighing robustness.
 
 The score explains the deployment choice, while every raw component remains
 visible so readers can reject the weighting and inspect the trade-off directly.
+
+For the final course report, Lite-ActionMAE is the selected experimental model
+and Gated Fusion remains a baseline. The completed numerical result directory is
+kept outside Git; final figures must be regenerated from that real
+`summary.csv`, not from test fixtures.
 
 ## Literature basis
 

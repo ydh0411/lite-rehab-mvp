@@ -29,7 +29,7 @@ MODEL_LABELS = {
     "pose_cnn_bigru": "Pose CNN-BiGRU",
     "early_fusion": "Early Fusion",
     "gated_fusion": "Gated Fusion",
-    "lite_actionmae": "Lite-ActionMAE (Proposed)",
+    "lite_actionmae": "Lite-ActionMAE (Final)",
 }
 
 MODEL_COLORS = {
