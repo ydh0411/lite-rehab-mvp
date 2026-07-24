@@ -12,12 +12,12 @@ The benchmark compares six compact action-recognition configurations:
 4. `early_fusion`: direct RGB-pose/IMU feature concatenation.
 5. `gated_fusion`: reliability-gated late fusion with modality dropout.
 6. `lite_actionmae`: the final robustness-oriented model, using modality
-   masking, memory/dummy tokens, Transformer fusion, and clean-target
+   masking, memory/dummy tokens, Transformer fusion, and modality-token
    reconstruction.
 
 Every model is kept below two million trainable parameters. The final RTX 5060
 configuration evaluates all six models with seeds 7/17/27, at most 20,000
-training windows, at most 5,000 fixed evaluation windows, and eight epochs.
+training windows, at most 5,000 test windows per seed, and eight epochs.
 No video decoding, ViTPose training, PoseC3D training, or six-IMU raw signal
 reconstruction is performed.
 

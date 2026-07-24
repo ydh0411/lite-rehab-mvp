@@ -19,6 +19,7 @@ engineering benchmark, not a clinical claim or an exact paper reproduction.
 5. The current mRI "IMU" features are full-body pose estimates rather than the
    deployed wrist MPU6050's raw six-axis stream, so benchmark weights are not
    directly deployable without aligned device-data retraining.
+
 The model-selection score is fixed before the new run:
 
 - 25% clean Macro-F1;
